@@ -78,6 +78,9 @@ class MemoryModalController {
         this.onCloseFn = onCloseFn;
         this.index = 0;
 
+        // 预加载所有图片，消除切换时的卡顿
+        slides.forEach(s => { if (s.image) { new Image().src = s.image; } });
+
         this.overlay.style.display = 'flex';
         this.render();
     }
