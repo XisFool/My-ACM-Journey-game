@@ -78,8 +78,13 @@ class MemoryModalController {
         this.onCloseFn = onCloseFn;
         this.index = 0;
 
-        // 预加载所有图片，消除切换时的卡顿
-        slides.forEach(s => { if (s.image) { new Image().src = s.image; } });
+        // 预加载并持久化存储图片对象（防止被GC取消请求）
+        this._preloaded = slides.map(s => {
+            if (!s.image) return null;
+            const img = new Image();
+            img.src = s.image;
+            return img;
+        });
 
         this.overlay.style.display = 'flex';
         this.render();
@@ -89,11 +94,22 @@ class MemoryModalController {
         const slide = this.slides[this.index];
         const total = this.slides.length;
 
-        // 图片
+        // 图片（淡入切换）
         if (slide.image) {
-            this.imageEl.src = slide.image;
             this.imageEl.style.display = 'block';
             this.imageEl.style.cursor = (this.index < total - 1) ? 'pointer' : 'default';
+            const pre = this._preloaded && this._preloaded[this.index];
+            if (pre && pre.complete) {
+                // 图片已缓存，直接淡入
+                this.imageEl.style.opacity = '0';
+                this.imageEl.src = pre.src;
+                requestAnimationFrame(() => { this.imageEl.style.opacity = '1'; });
+            } else {
+                // 仍在加载，监听完成后淡入
+                this.imageEl.style.opacity = '0';
+                this.imageEl.src = slide.image;
+                this.imageEl.onload = () => { this.imageEl.style.opacity = '1'; };
+            }
         } else {
             this.imageEl.style.display = 'none';
         }

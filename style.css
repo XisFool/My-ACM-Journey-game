@@ -292,6 +292,7 @@ body {
     width: 100%;
     max-height: 420px;
     object-fit: contain;
+    transition: opacity 0.2s ease;
     border: 2px solid #000;
     margin-bottom: 16px;
     background: #e0d8c8;
