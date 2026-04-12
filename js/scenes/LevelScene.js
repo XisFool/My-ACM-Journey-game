@@ -1,0 +1,403 @@
+/* ============================================
+   LevelScene.js — 核心游戏场景
+   ============================================ */
+import { STORY } from '../story.js';
+
+const CFG = {
+    W: 960, H: 540,
+    WORLD_W: 2300,
+    BG_SCROLL: 0.2,           // ← 背景跟随速度，0=不动 1=同步，自行微调
+    GRAVITY: 900,
+    JUMP_VELOCITY: -340,
+    COYOTE_TIME_MS: 90,
+    JUMP_BUFFER_MS: 110,
+    PLAYER_SPEED: 230,
+    GROUND_H: 58,              // ← 地面高度（约1格砖块）
+    BLOCK_SIZE: 40,
+};
+
+export default class LevelScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'LevelScene' });
+    }
+
+    // ── 初始化 ──────────────────────────────────
+    init(data) {
+        this.lvIdx = data.lvIdx || 0;
+        this.levelData = STORY.levels[this.lvIdx];
+        this.isPaused = false;
+        this.modalOpen = false;
+        this.collected = 0;
+    }
+
+    // ── preload() ────────────────────────────────
+    preload() {
+        // 背景加载
+        if (this.levelData.bgImage) {
+            this.load.image(`bg_${this.lvIdx}`, this.levelData.bgImage);
+        }
+        // 音乐加载（同一首歌共用 key，跨关卡共享）
+        if (this.levelData.bgMusic) {
+            const musicKey = `bgm:${this.levelData.bgMusic}`;
+            if (!this.cache.audio.exists(musicKey)) {
+                this.load.audio(musicKey, this.levelData.bgMusic);
+            }
+        }
+        // (其余占位纹理统一已经在 BootScene.js 全局注册了)
+    }
+
+    // ── create() ─────────────────────────────────
+    create() {
+        // 持久化当前关卡索引，供主菜单 CONTINUE 读取
+        try { localStorage.setItem('acm_journey_last_level', String(this.lvIdx)); } catch (_) { /* 无痕模式 */ }
+
+        const bgNum = parseInt(this.levelData.bgColor.replace('#', ''), 16) || 0x000000;
+        this.cameras.main.setBackgroundColor(bgNum);
+
+        // 0. 背景音乐（同一首跨关卡共享进度，播完才循环）
+        if (this.levelData.bgMusic) {
+            const musicKey = `bgm:${this.levelData.bgMusic}`;
+            const curKey = this.registry.get('_bgmKey');
+            const curBgm = this.registry.get('_bgmObj');
+
+            if (curKey === musicKey && curBgm && curBgm.isPlaying) {
+                // 同一首歌仍在播放，不重启
+                this.bgm = curBgm;
+            } else {
+                // 停掉旧的，播放新的
+                if (curBgm) { try { curBgm.stop(); } catch (_) {} }
+                this.bgm = this.sound.add(musicKey, { loop: true, volume: 0.5 });
+                this.bgm.play();
+                this.registry.set('_bgmKey', musicKey);
+                this.registry.set('_bgmObj', this.bgm);
+            }
+        }
+
+        // 1. 背景（视差滚动：背景比玩家慢）
+        if (this.levelData.bgImage) {
+            const bgKey = `bg_${this.lvIdx}`;
+            this.bgImage = this.add.image(0, 0, bgKey)
+                .setOrigin(0, 0)
+                .setScrollFactor(CFG.BG_SCROLL, 0)
+                .setDepth(-100);
+            // 自动适配：先算出让图片高度=视口高度的基准缩放
+            // BG_SCALE_MULT ← 在此微调（1.0=刚好填满高度，<1缩小，>1放大）
+            const BG_SCALE_MULT = 0.96;
+            const autoScale = CFG.H / this.bgImage.height;
+            this.bgImage.setScale(autoScale * BG_SCALE_MULT);
+        } else {
+            // 背景渐变修饰（无图时）
+            for (let i = 0; i < 5; i++) {
+                this.add.rectangle(0, CFG.H - i * 60, CFG.WORLD_W, 60, 0xffffff, i * 0.05)
+                    .setOrigin(0, 1)
+                    .setScrollFactor(CFG.BG_SCROLL, 0)
+                    .setDepth(-100);
+            }
+        }
+
+        // 2. 地面（无可见砖块，仅保留隐形碰撞体）
+        this.groundGroup = this.physics.add.staticGroup();
+        const groundCol = this.add.rectangle(CFG.WORLD_W / 2, CFG.H - CFG.GROUND_H + CFG.GROUND_H / 2, CFG.WORLD_W, CFG.GROUND_H, 0x000000, 0);
+        this.groundGroup.add(groundCol);
+        groundCol.body.updateFromGameObject();
+
+        // 3. 玩家（使用精灵图表动画）
+        this.player = this.physics.add.sprite(100, CFG.H - CFG.GROUND_H - 51, 'player_r');
+        this.player.setScale(0.21, 0.18);
+        this.player.setCollideWorldBounds(false);
+        this.player.setGravityY(CFG.GRAVITY);
+        // 精灵图帧 230×410，角色占中间区域，设置碰撞体覆盖主体
+        this.player.body.setSize(120, 370);
+        this.player.body.setOffset(55, 30);
+        this.facingRight = true;
+        this.player.play('idle_r');
+
+        // 5. 方块
+        this.blocks = this.physics.add.staticGroup();
+        const blocksData = this.levelData.memoryBlocks || [];
+        this.totalBlocks = blocksData.length;
+
+        blocksData.forEach((blockData, idx) => {
+            const bx = 400 + (idx + 0.5) * ((CFG.WORLD_W - 800) / this.totalBlocks);
+            const by = CFG.H - CFG.GROUND_H - 100 - Phaser.Math.Between(0, 21);
+
+            const block = this.blocks.create(bx, by, 'qblock');
+            block.setData('memories', blockData.memories);
+            block.setData('collected', false);
+
+            // 上下浮动 tween
+            this.tweens.add({
+                targets: block,
+                y: block.y - 10,
+                duration: 1200,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        });
+
+        // 6. 碰撞
+        this.physics.add.collider(this.player, this.groundGroup);
+        this.physics.add.collider(this.player, this.blocks, this.hitBlock, this.canHitBlock, this);
+
+        // 加上防止掉出地图的保护（尽管collideWorldBounds=false）
+        this.events.on('update', () => {
+            if (this.player.y > CFG.H + 200) {
+                this.player.setPosition(100, CFG.H - CFG.GROUND_H - 51);
+                this.player.setVelocity(0, 0);
+            }
+        });
+
+        // 7. 相机
+        this.cameras.main.setBounds(0, 0, CFG.WORLD_W, CFG.H);
+        this.physics.world.setBounds(0, 0, CFG.WORLD_W, CFG.H);
+        this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
+
+        // 8. 输入
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.keys = this.input.keyboard.addKeys({
+            up: 'W', left: 'A', down: 'S', right: 'D'
+        });
+        this.lastGroundedAt = this.time.now;
+        this.jumpPressedAt = -Infinity;
+        this.jumpStarted = false;
+
+        // 9. HUD — 左上角关卡信息（3行：LEVEL N / CITY / YEAR）
+        this.add.text(20, 34, `LEVEL  ${this.levelData.id}`, {
+            fontFamily: '"Press Start 2P"',
+            fontSize: '14px',
+            color: '#ffffff',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 0, fill: true },
+        }).setScrollFactor(0).setDepth(20);
+
+        this.add.text(20, 56, this.levelData.cityEn || this.levelData.city, {
+            fontFamily: '"Press Start 2P"',
+            fontSize: '26px',
+            color: '#000000',
+            shadow: { offsetX: 0, offsetY: 0, color: '#ffffff', blur: 0, fill: false },
+        }).setScrollFactor(0).setDepth(20).setStroke('#ffffff', 4);
+
+        this.add.text(20, 92, this.levelData.year, {
+            fontFamily: '"Press Start 2P"',
+            fontSize: '14px',
+            color: '#ffffff',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 0, fill: true },
+        }).setScrollFactor(0).setDepth(20);
+
+        this.hudCountText  = this.add.text(CFG.W - 20, 40, `Collected: ${this.collected}/${this.totalBlocks}`, { fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#ffffff' }).setOrigin(1, 0).setScrollFactor(0).setDepth(20);
+        // Home 按钮（使用 DOM 层，与菜单 Home 统一设计）
+        const gameHomeContainer = document.getElementById('game-home-container');
+        const gameHomeBtn = document.getElementById('game-home-btn');
+        if (gameHomeContainer) gameHomeContainer.style.display = 'flex';
+
+        // 移除旧监听器（防止重复绑定）
+        const newGameHomeBtn = gameHomeBtn.cloneNode(true);
+        gameHomeBtn.parentNode.replaceChild(newGameHomeBtn, gameHomeBtn);
+
+        newGameHomeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.sound.stopAll();
+            this.registry.set('_bgmKey', null);
+            this.registry.set('_bgmObj', null);
+            if (gameHomeContainer) gameHomeContainer.style.display = 'none';
+            this.cameras.main.fadeOut(400, 0, 0, 0);
+            this.cameras.main.once('camerafadeoutcomplete', () => {
+                const overlay = document.getElementById('menu-overlay');
+                if (overlay) overlay.classList.remove('hidden');
+                this.scene.start('MenuScene');
+            });
+        });
+
+        // 粒子系统
+        if (this.levelData.particle) {
+            this._createParticles();
+        }
+
+        // 淡入
+        this.cameras.main.fadeIn(500, parseInt(this.levelData.bgColor.replace("#", ""), 16));
+    }
+
+    // ── canHitBlock(player, block) ────────────────
+    canHitBlock(player, block) {
+        // 返回 true 的条件（必须同时满足）：
+        // 1. !block.getData('collected')
+        // 2. !this.modalOpen
+        // 3. player.body.velocity.y < 0（玩家向上运动）
+        // 4. player.body.top < block.body.bottom + 12
+        return (
+            !block.getData('collected') &&
+            !this.modalOpen &&
+            player.body.velocity.y < 0 &&
+            player.body.top < block.body.bottom + 12
+        );
+    }
+
+    // ── hitBlock(player, block) ───────────────────
+    hitBlock(player, block) {
+        // 1. 标记收集
+        block.setData('collected', true);
+        
+        // 2. UI 更新
+        this.collected++;
+        this.hudCountText.setText(`Collected: ${this.collected}/${this.totalBlocks}`);
+
+        // 3. 方块变暗表示已触碰（不销毁）
+        this.tweens.add({
+            targets: block,
+            y: block.y - 8,
+            duration: 120,
+            yoyo: true,
+            ease: 'Power1',
+            onComplete: () => {
+                block.setTint(0x444444);
+                block.setAlpha(0.45);
+            }
+        });
+
+        // 4. 暂停玩家并在顶部反弹
+        this.modalOpen = true;
+        player.setVelocityX(0);
+        player.setVelocityY(50); // 给个向下反弹效果
+
+        // 5. 取数据
+        const memories = block.getData('memories');
+
+        // 6. 调用纯 DOM 弹窗
+        window.MemoryModal.open(this.levelData.city, memories, () => {
+            this.modalOpen = false;
+            
+            // 是否全部收集
+            if (this.collected >= this.totalBlocks) {
+                // 1秒后去下一关
+                this.time.delayedCall(1000, () => {
+                    this.goNextLevel();
+                });
+            }
+        });
+    }
+
+    // ── goNextLevel() ─────────────────────────────
+    goNextLevel() {
+        const nextIdx = this.lvIdx + 1;
+        const nextLevel = STORY.levels[nextIdx];
+
+        // 如果下一关音乐不同，停掉当前音乐（最终结束画面保持音乐继续）
+        if (nextLevel && nextLevel.bgMusic !== this.levelData.bgMusic) {
+            this.sound.stopAll();
+            this.registry.set('_bgmKey', null);
+            this.registry.set('_bgmObj', null);
+        }
+
+        this.cameras.main.fadeOut(800, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+            if (nextIdx < STORY.levels.length) {
+                this.scene.restart({ lvIdx: nextIdx });
+            } else {
+                this.showEndScreen();
+            }
+        });
+    }
+
+    // ── showEndScreen() ─────────────────────────────
+    showEndScreen() {
+        const screen = document.createElement('div');
+        screen.id = 'end-screen';
+
+        const img = document.createElement('img');
+        img.src = 'js/Photo/Background/GameOver.webp';
+        screen.appendChild(img);
+
+        screen.addEventListener('click', () => {
+            screen.remove();
+            this.sound.stopAll();
+            this.registry.set('_bgmKey', null);
+            this.registry.set('_bgmObj', null);
+            const overlay = document.getElementById('menu-overlay');
+            if (overlay) overlay.classList.remove('hidden');
+            const gameHomeContainer = document.getElementById('game-home-container');
+            if (gameHomeContainer) gameHomeContainer.style.display = 'none';
+            this.scene.start('MenuScene');
+        });
+
+        document.body.appendChild(screen);
+    }
+
+    // ── update() ─────────────────────────────────
+    update() {
+        // 开头检查
+        if (this.modalOpen) {
+            // 在弹窗期间，不响应输入，但物理引擎依旧运行
+            return;
+        }
+
+        const left = this.cursors.left.isDown || this.keys.left.isDown;
+        const right = this.cursors.right.isDown || this.keys.right.isDown;
+        const wantJump = Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
+                         Phaser.Input.Keyboard.JustDown(this.spaceKey) ||
+                         Phaser.Input.Keyboard.JustDown(this.keys.up);
+        const body = this.player.body;
+        const onGround = body.blocked.down || body.touching.down;
+
+        if (onGround) {
+            this.lastGroundedAt = this.time.now;
+        }
+
+        if (wantJump) {
+            this.jumpPressedAt = this.time.now;
+        }
+
+        // 左右移动 + 动画切换
+        if (left) {
+            this.player.setVelocityX(-CFG.PLAYER_SPEED);
+            if (this.facingRight) {
+                this.facingRight = false;
+                this.player.body.setSize(120, 355);
+                this.player.body.setOffset(55, 30);
+            }
+            this.player.play('walk_l', true);
+        } else if (right) {
+            this.player.setVelocityX(CFG.PLAYER_SPEED);
+            if (!this.facingRight) {
+                this.facingRight = true;
+                this.player.body.setSize(120, 370);
+                this.player.body.setOffset(55, 30);
+            }
+            this.player.play('walk_r', true);
+        } else {
+            this.player.setVelocityX(0);
+            this.player.play(this.facingRight ? 'idle_r' : 'idle_l', true);
+        }
+
+        // 跳跃（一段跳，固定高度）
+        const canUseCoyote = (this.time.now - this.lastGroundedAt) <= CFG.COYOTE_TIME_MS;
+        const hasJumpBuffer = (this.time.now - this.jumpPressedAt) <= CFG.JUMP_BUFFER_MS;
+
+        if (hasJumpBuffer && (onGround || canUseCoyote) && !this.jumpStarted) {
+            this.player.setVelocityY(CFG.JUMP_VELOCITY);
+            this.jumpPressedAt = -Infinity;
+            this.jumpStarted = true;
+        }
+
+        if (onGround && body.velocity.y >= 0) {
+            this.jumpStarted = false;
+        }
+    }
+
+    // ── 粒子特效 (简易实现) ──────────────────────
+    _createParticles() {
+        if (this.levelData.particle === 'snow') {
+            this.add.particles(0, 0, 'particle_snow', {
+                x: { min: 0, max: CFG.WORLD_W },
+                y: -50,
+                lifespan: 8000,
+                speedY: { min: 40, max: 100 },
+                speedX: { min: -20, max: 20 },
+                scale: { min: 0.5, max: 1.5 },
+                alpha: { start: 0.8, end: 0 },
+                tint: 0xffffff,
+                quantity: 2
+            });
+        }
+    }
+}

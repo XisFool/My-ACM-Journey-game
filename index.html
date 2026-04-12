@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="我的ACM旅途 - 一个像素风传记游戏，记录我的算法竞赛之路">
+    <title>我的ACM旅途 | My ACM Journey</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- ====== HTML 主菜单遮罩层 ====== -->
+    <div id="menu-overlay">
+        <div class="glass-container">
+            <div class="content-top">
+                <h1 class="main-text">Player 1</h1>
+                <h2 class="sub-text">start your adventure</h2>
+                <div class="hero-cta">
+                    <button class="hero-cta-btn btn-left" id="btn-start">Press Start</button>
+                    <button class="hero-cta-btn btn-right" id="btn-continue">Continue</button>
+                </div>
+            </div>
+            <div class="explore-container">
+                <div class="explore-text">move mouse to explore</div>
+            </div>
+            <div class="home-container">
+                <div class="home-wrapper">
+                    <a href="#" class="home-btn" id="menu-home-btn" title="Back to Home">
+                        <i class="fa-solid fa-house"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 游戏内 Home 按钮（DOM 层，与菜单 Home 统一设计） -->
+    <div id="game-home-container" class="game-home-container" style="display:none;">
+        <a href="#" class="home-btn" id="game-home-btn" title="Back to Home">
+            <i class="fa-solid fa-house"></i>
+        </a>
+    </div>
+
+    <!-- Phaser 游戏容器 -->
+    <div id="game-container"></div>
+
+    <!-- 加载 Phaser 3.60 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+
+    <!-- 以 ES Module 方式加载游戏脚本 -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "outputDirectory": ".",
+  "headers": [
+    {
+      "source": "/(.*).js",
+      "headers": [
+        { "key": "Content-Type", "value": "text/javascript" }
+      ]
+    },
+    {
+      "source": "/(.*).mp3",
+      "headers": [
+        { "key": "Content-Type", "value": "audio/mpeg" }
+      ]
+    },
+    {
+      "source": "/(.*).webp",
+      "headers": [
+        { "key": "Content-Type", "value": "image/webp" }
+      ]
+    }
+  ]
+}
