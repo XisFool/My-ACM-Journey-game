@@ -10,7 +10,7 @@ export default class BootScene extends Phaser.Scene {
     }
 
     preload() {
-        // --- 角色精灵图 ---
+        // --- 只加载 MenuScene 和骨骼必需的极少量资源 ---
         this.load.spritesheet('player_r', 'js/Photo/Qiu/Qiu_R.png', {
             frameWidth: 230,
             frameHeight: 410,
@@ -19,31 +19,7 @@ export default class BootScene extends Phaser.Scene {
             frameWidth: 230,
             frameHeight: 395,
         });
-
-        // --- 一次性预加载所有关卡的背景图 + 音乐 + NPC ---
-        const audioLoaded = new Set();
-        STORY.levels.forEach((level, idx) => {
-            if (level.bgImage) {
-                this.load.image(`bg_${idx}`, level.bgImage);
-            }
-            if (level.bgMusic && !audioLoaded.has(level.bgMusic)) {
-                this.load.audio(`bgm:${level.bgMusic}`, level.bgMusic);
-                audioLoaded.add(level.bgMusic);
-            }
-            // NPC 精灵图
-            (level.npcs || []).forEach(npc => {
-                if (!this.textures.exists(npc.key)) {
-                    if (npc.frameWidth) {
-                        this.load.spritesheet(npc.key, npc.image, {
-                            frameWidth: npc.frameWidth,
-                            frameHeight: npc.frameHeight,
-                        });
-                    } else {
-                        this.load.image(npc.key, npc.image);
-                    }
-                }
-            });
-        });
+        // 不在这里一次性加载所有的背景大图和BGM，将它们延迟到 LoadingScene!
     }
 
     create() {
@@ -136,24 +112,6 @@ export default class BootScene extends Phaser.Scene {
             g.generateTexture('particle_snow', 4, 4);
             g.destroy();
         }
-
-        // --- 后台预加载所有记忆图片（DOM层，不阻塞菜单） ---
-        window._preloadedImages = [];
-        STORY.levels.forEach(level => {
-            (level.memoryBlocks || []).forEach(block => {
-                (block.memories || []).forEach(m => {
-                    if (m.image) {
-                        const img = new Image();
-                        img.src = m.image;
-                        window._preloadedImages.push(img);
-                    }
-                });
-            });
-        });
-        // 通关图片
-        const endImg = new Image();
-        endImg.src = 'js/Photo/Background/GameOver.webp';
-        window._preloadedImages.push(endImg);
 
         // 纹理全部生成完毕后，进入主菜单
         this.scene.start('MenuScene');

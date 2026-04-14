@@ -281,6 +281,55 @@ export default class LevelScene extends Phaser.Scene {
 
         // 淡入
         this.cameras.main.fadeIn(500, parseInt(this.levelData.bgColor.replace("#", ""), 16));
+
+        // 延迟 1.5 秒后，在后台静默预加载本关剧情图片与下一关资源
+        // 不会阻塞主线程和玩家操作
+        this.time.delayedCall(1500, () => {
+            this._preloadBackgroundAssets();
+        });
+    }
+
+    // ── 后台预加载 ────────────────────────────────
+    _preloadBackgroundAssets() {
+        // 1. DOM层预加载本关所有的记忆图片
+        window._levelPreloadedImages = window._levelPreloadedImages || [];
+        const blocksData = this.levelData.memoryBlocks || [];
+        blocksData.forEach(block => {
+            (block.memories || []).forEach(m => {
+                if (m.image) {
+                    const img = new Image();
+                    img.src = m.image;
+                    window._levelPreloadedImages.push(img);
+                }
+            });
+        });
+
+        // 2. Phaser 层预加载下一关核心资源 (减少过场时间)
+        const nextIdx = this.lvIdx + 1;
+        if (nextIdx < STORY.levels.length) {
+            const nextData = STORY.levels[nextIdx];
+            if (nextData.bgImage) {
+                this.load.image(`bg_${nextIdx}`, nextData.bgImage);
+            }
+            if (nextData.bgMusic && !this.cache.audio.exists(`bgm:${nextData.bgMusic}`)) {
+                this.load.audio(`bgm:${nextData.bgMusic}`, nextData.bgMusic);
+            }
+            (nextData.npcs || []).forEach(npc => {
+                if (!this.textures.exists(npc.key)) {
+                    if (npc.frameWidth) {
+                        this.load.spritesheet(npc.key, npc.image, { frameWidth: npc.frameWidth, frameHeight: npc.frameHeight });
+                    } else {
+                        this.load.image(npc.key, npc.image);
+                    }
+                }
+            });
+            this.load.start(); // 对于非 preload 阶段调用 load，需要手动 start
+        } else {
+            // 如果是最后一关，则预加载通关图
+            const endImg = new Image();
+            endImg.src = 'js/Photo/Background/GameOver.webp';
+            window._levelPreloadedImages.push(endImg);
+        }
     }
 
     // ── canHitBlock(player, block) ────────────────

@@ -20,6 +20,12 @@ export default class MenuScene extends Phaser.Scene {
         const gameHome = document.getElementById('game-home-container');
         if (gameHome) gameHome.style.display = 'none';
 
+        // 恢复按钮文字（修复返回主菜单时残留 LOADING... 的问题）
+        const btnStart = document.getElementById('btn-start');
+        const btnContinue = document.getElementById('btn-continue');
+        if (btnStart) btnStart.textContent = 'Press Start';
+        if (btnContinue) btnContinue.textContent = 'Continue';
+
         // 显示 HTML 菜单遮罩
         const overlay = document.getElementById('menu-overlay');
         if (overlay) {
