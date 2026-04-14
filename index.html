@@ -258,8 +258,20 @@
         })();
     </script>
 
-    <!-- 本地 Phaser 3.60 -->
+    <!-- 加载 Phaser (优先本地，失败则跳转 CDN 备用) -->
     <script src="js/libs/phaser.min.js"></script>
+    <script>
+        if (typeof Phaser === 'undefined') {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"><\/script>');
+        }
+    </script>
+
+    <!-- 全局报错捕捉 -->
+    <script>
+        window.addEventListener('error', function(e) {
+            console.log('Resource/Script Error detected:', e.target.src || e.target.href || e.message);
+        }, true);
+    </script>
 
     <!-- 以 ES Module 方式加载游戏脚本 -->
     <script type="module" src="js/main.js"></script>

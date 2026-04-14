@@ -10,18 +10,19 @@ import MenuScene from './scenes/MenuScene.js';
 import LevelScene from './scenes/LevelScene.js';
 import LoadingScene from './scenes/LoadingScene.js';
 
-// 确保 DOM 加载完成后启动 Phaser
-window.onload = () => {
+// 启动函数
+const initGame = () => {
+    console.log("Phaser Game Initializing...");
     const config = {
         type: Phaser.AUTO,
         parent: 'game-container',
         width: CANVAS_WIDTH,
         height: CANVAS_HEIGHT,
-        pixelArt: true,          // 开启像素风渲染，关闭抗锯齿
+        pixelArt: true,
         physics: {
             default: 'arcade',
             arcade: {
-                gravity: { y: 0 }, // 重力在具体场景或实体中设置
+                gravity: { y: 0 },
                 debug: false
             }
         },
@@ -31,12 +32,23 @@ window.onload = () => {
             LoadingScene,
             LevelScene
         ],
-        // 自动缩放适应屏幕，保持比例
         scale: {
             mode: Phaser.Scale.ENVELOP,
             autoCenter: Phaser.Scale.CENTER_BOTH
         }
     };
 
-    const game = new Phaser.Game(config);
+    try {
+        const game = new Phaser.Game(config);
+        window.gameInstance = game; // 暴露到全局方便调试
+    } catch (err) {
+        console.error("Game Launch Failed:", err);
+    }
 };
+
+// 立即尝试初始化（模块脚本默认已 DOMContentLoaded）
+if (document.readyState !== 'loading') {
+    initGame();
+} else {
+    document.addEventListener('DOMContentLoaded', initGame);
+}
