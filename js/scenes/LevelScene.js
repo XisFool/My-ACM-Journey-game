@@ -136,6 +136,71 @@ export default class LevelScene extends Phaser.Scene {
             });
         });
 
+        // 5b. NPC 生成
+        this.npcs = [];
+        const npcList = this.levelData.npcs || [];
+        npcList.forEach(npcData => {
+            // 计算 NPC X 坐标：放在 afterBlock 和 afterBlock+1 之间
+            const idx1 = npcData.afterBlock;
+            const idx2 = idx1 + 1;
+            const spacing = (CFG.WORLD_W - 800) / this.totalBlocks;
+            const bx1 = 400 + (idx1 + 0.5) * spacing;
+            const bx2 = 400 + (idx2 + 0.5) * spacing;
+            const npcX = (bx1 + bx2) / 2;
+            const npcY = CFG.H - CFG.GROUND_H + 5;
+
+            // 如果是精灵图，创建动画并播放
+            let sprite;
+            if (npcData.frameWidth) {
+                const animKey = `npc_${npcData.key}_idle`;
+                if (!this.anims.exists(animKey)) {
+                    const totalFrames = Math.floor(
+                        this.textures.get(npcData.key).getSourceImage().width / npcData.frameWidth
+                    );
+                    this.anims.create({
+                        key: animKey,
+                        frames: this.anims.generateFrameNumbers(npcData.key, { start: 0, end: totalFrames - 1 }),
+                        frameRate: npcData.frameRate || 10,
+                        repeat: -1,
+                    });
+                }
+                sprite = this.add.sprite(npcX, npcY, npcData.key)
+                    .setOrigin(0.5, 1)
+                    .setDepth(5);
+                sprite.play(`npc_${npcData.key}_idle`);
+            } else {
+                sprite = this.add.image(npcX, npcY, npcData.key)
+                    .setOrigin(0.5, 1)
+                    .setDepth(5);
+            }
+            // 自动缩放：让 NPC 高度约 30px
+            const targetH = 31.5;
+            sprite.setScale(targetH / sprite.height);
+
+            // "!" 提示（靠近时显示）
+            const exclaim = this.add.text(npcX, npcY - targetH - 16, '!', {
+                fontFamily: '"Press Start 2P"',
+                fontSize: '18px',
+                color: '#ffd54f',
+                stroke: '#000000',
+                strokeThickness: 3,
+            }).setOrigin(0.5).setDepth(10).setAlpha(0);
+
+            // 气泡对话框（触发后显示）
+            const bubble = this._createBubble(npcX, npcY - targetH - 30, npcData.dialog);
+            bubble.setAlpha(0).setDepth(15);
+
+            this.npcs.push({
+                sprite,
+                data: npcData,
+                exclaim,
+                bubble,
+                nearTimer: 0,
+                triggered: false,
+                proximityRange: 80,
+            });
+        });
+
         // 6. 碰撞
         this.physics.add.collider(this.player, this.groundGroup);
         this.physics.add.collider(this.player, this.blocks, this.hitBlock, this.canHitBlock, this);
@@ -324,7 +389,7 @@ export default class LevelScene extends Phaser.Scene {
     }
 
     // ── update() ─────────────────────────────────
-    update() {
+    update(time, delta) {
         // 开头检查
         if (this.modalOpen) {
             // 在弹窗期间，不响应输入，但物理引擎依旧运行
@@ -382,6 +447,83 @@ export default class LevelScene extends Phaser.Scene {
         if (onGround && body.velocity.y >= 0) {
             this.jumpStarted = false;
         }
+
+        // NPC 近距离检测
+        this._updateNPCs(delta);
+    }
+
+    // ── 气泡对话框 ─────────────────────────────────
+    _createBubble(x, y, text) {
+        const container = this.add.container(x, y);
+        const padding = 6;
+        const maxWidth = 105;
+
+        // 先创建文字测量尺寸
+        const txt = this.add.text(0, 0, text, {
+            fontFamily: '"Noto Sans SC", sans-serif',
+            fontSize: '8.5px',
+            color: '#ffffff',
+            wordWrap: { width: maxWidth },
+            lineSpacing: 2,
+        }).setOrigin(0.5);
+
+        const bw = txt.width + padding * 2;
+        const bh = txt.height + padding * 2;
+
+        // 圆角矩形背景（浅色，无边框）
+        const bg = this.add.graphics();
+        bg.fillStyle(0x000000, 0.75);
+        bg.fillRoundedRect(-bw / 2, -bh / 2, bw, bh, 5);
+
+        // 底部小三角
+        bg.fillStyle(0x000000, 0.75);
+        bg.fillTriangle(-4, bh / 2, 4, bh / 2, 0, bh / 2 + 6);
+
+        container.add([bg, txt]);
+        return container;
+    }
+
+    // ── NPC 近距离检测 ───────────────────────────
+    _updateNPCs(delta) {
+        if (!this.npcs) return;
+        this.npcs.forEach(npc => {
+            const dist = Phaser.Math.Distance.Between(
+                this.player.x, this.player.y,
+                npc.sprite.x, npc.sprite.y
+            );
+            const isNear = dist < npc.proximityRange;
+
+            if (isNear && !npc.triggered) {
+                // 显示 "!" 提示
+                npc.exclaim.setAlpha(1);
+                npc.nearTimer += delta;
+
+                if (npc.nearTimer >= npc.data.triggerTime) {
+                    // 触发对话
+                    npc.triggered = true;
+                    npc.exclaim.setAlpha(0);
+                    npc.bubble.setAlpha(1);
+
+                    // 气泡淡入动画
+                    this.tweens.add({
+                        targets: npc.bubble,
+                        alpha: { from: 0, to: 1 },
+                        y: npc.bubble.y - 8,
+                        duration: 300,
+                        ease: 'Power2',
+                    });
+                }
+            } else if (!isNear) {
+                npc.nearTimer = 0;
+                npc.exclaim.setAlpha(0);
+                // 离开后气泡消失，下次还能再触发
+                if (npc.triggered) {
+                    npc.triggered = false;
+                    npc.bubble.setAlpha(0);
+                    npc.bubble.y += 8; // 复位
+                }
+            }
+        });
     }
 
     // ── 粒子特效 (简易实现) ──────────────────────

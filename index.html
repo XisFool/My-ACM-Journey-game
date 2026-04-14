@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,14 +9,18 @@
     <link rel="stylesheet" href="style.css">
     <!-- Google Fonts（国内镜像） -->
     <link rel="preconnect" href="https://fonts.loli.net">
-    <link href="https://fonts.loli.net/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.loli.net/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&family=Noto+Sans+SC:wght@400;700&display=swap"
+        rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
+
 <body>
     <!-- ====== HTML 主菜单遮罩层 ====== -->
     <div id="menu-overlay">
         <div class="glass-container">
+            <button id="theme-toggle" title="Switch Day/Night"><i class="fa-solid fa-moon"></i></button>
             <div class="content-top">
                 <h1 class="main-text">Player 1</h1>
                 <h2 class="sub-text">start your adventure</h2>
@@ -29,9 +34,101 @@
             </div>
             <div class="home-container">
                 <div class="home-wrapper">
-                    <a href="#" class="home-btn" id="menu-home-btn" title="Back to Home">
+                    <span class="btn-label">Home</span>
+                    <a href="#" class="home-btn" id="menu-home-btn">
                         <i class="fa-solid fa-house"></i>
                     </a>
+                </div>
+                <div class="home-wrapper">
+                    <span class="btn-label">About</span>
+                    <a href="#" class="profile-btn" id="menu-profile-btn">
+                        <i class="fa-solid fa-user"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== Profile 面板 ====== -->
+    <div id="profile-overlay" class="profile-overlay hidden">
+        <div class="profile-panel">
+            <div class="profile-gradient-bar"></div>
+            <button class="profile-close" id="profile-close-btn">&times;</button>
+            <div class="profile-body">
+                <div class="profile-header">
+                    <div class="profile-avatar">
+                        <img src="js/Photo/Qiu/Head.jpg" alt="XisaFool">
+                    </div>
+                    <div class="profile-info">
+                        <h2 class="profile-name">XisaFool</h2>
+                        <p class="profile-tag">Acmer</p>
+                        <p class="profile-contact">
+                            QQ：2834264571
+                            <button class="profile-copy-btn" id="profile-copy-qq">复制</button>
+                        </p>
+                    </div>
+                </div>
+                <!-- 第一大框：学历 -->
+                <div class="profile-divider"><span>Education Background</span></div>
+                <div class="profile-awards">
+                    <div class="profile-award-item">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                        <span class="profile-award-name">本科 南昌理工学院</span>
+                        <span class="profile-award-year">2022-2026</span>
+                    </div>
+                    <div class="profile-award-item">
+                        <i class="fa-solid fa-university"></i>
+                        <span class="profile-award-name">研究生 中国计量大学</span>
+                        <span class="profile-award-year">2026-至今</span>
+                    </div>
+                    <div class="profile-award-item">
+                        <i class="fa-solid fa-laptop-code"></i>
+                        <span class="profile-award-name">南昌理工ACM集训队</span>
+                    </div>
+                </div>
+
+                <!-- 第二大框：兴趣爱好 -->
+                <div class="profile-divider" style="margin-top: 20px;"><span>Interests & Hobbies</span></div>
+                <div class="profile-tags-container">
+                    <span class="profile-tag-item">足球</span>
+                    <span class="profile-tag-item">Vibe Coding</span>
+                    <span class="profile-tag-item">ex-ACMer</span>
+                    <span class="profile-tag-item">CS2</span>
+                </div>
+
+                <!-- 第三大框：COMPETITIVE RECORD -->
+                <div class="profile-divider" style="margin-top: 20px;"><span>Competitive Record</span></div>
+                <div class="profile-awards">
+                    <div class="profile-award-item">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span class="profile-award-name">CCPC 重庆区域赛 铜奖</span>
+                        <span class="profile-award-year">2024</span>
+                    </div>
+                    <div class="profile-award-item">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span class="profile-award-name">ICPC 江西省赛 银奖</span>
+                        <span class="profile-award-year">2024</span>
+                    </div>
+                    <div class="profile-award-item">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span class="profile-award-name">睿抗机器人开发者大赛 全国一等奖</span>
+                        <span class="profile-award-year">2024</span>
+                    </div>
+                    <div class="profile-award-item">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span class="profile-award-name">第十五届蓝桥杯 C/C++ B组 全国一等奖</span>
+                        <span class="profile-award-year">2024</span>
+                    </div>
+                    <div class="profile-award-item">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span class="profile-award-name">百度之星程序设计大赛 初赛银奖</span>
+                        <span class="profile-award-year">2024</span>
+                    </div>
+                    <div class="profile-award-item">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span class="profile-award-name">程序设计天梯赛 国家三等奖</span>
+                        <span class="profile-award-year">2024</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -47,10 +144,125 @@
     <!-- Phaser 游戏容器 -->
     <div id="game-container"></div>
 
+    <!-- 日夜模式切换 -->
+    <script>
+        (function () {
+            const overlay = document.getElementById('menu-overlay');
+            const toggleBtn = document.getElementById('theme-toggle');
+            const icon = toggleBtn ? toggleBtn.querySelector('i') : null;
+
+            const profileOverlay = document.getElementById('profile-overlay');
+
+            function applyTheme(theme) {
+                overlay.dataset.theme = theme;
+                if (icon) {
+                    icon.className = theme === 'night' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+                }
+                document.body.style.background = theme === 'night' ? '#000000' : '#ffffff';
+                // 同步 Profile 面板主题
+                if (profileOverlay) {
+                    profileOverlay.classList.toggle('night', theme === 'night');
+                }
+            }
+
+            const saved = localStorage.getItem('acm-theme') || 'day';
+            applyTheme(saved);
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', () => {
+                    const current = overlay.dataset.theme || 'day';
+                    const next = current === 'night' ? 'day' : 'night';
+                    applyTheme(next);
+                    localStorage.setItem('acm-theme', next);
+                });
+            }
+        })();
+    </script>
+
+    <!-- Profile 面板 open/close + QQ复制 -->
+    <script>
+        (function () {
+            const overlay = document.getElementById('profile-overlay');
+            const openBtn = document.getElementById('menu-profile-btn');
+            const closeBtn = document.getElementById('profile-close-btn');
+            const copyBtn = document.getElementById('profile-copy-qq');
+
+            function openProfile(e) {
+                if (e) e.preventDefault();
+                overlay.classList.remove('hidden', 'closing');
+            }
+
+            function closeProfile() {
+                overlay.classList.add('closing');
+                overlay.addEventListener('animationend', function handler() {
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('closing');
+                    overlay.removeEventListener('animationend', handler);
+                });
+            }
+
+            if (openBtn) openBtn.addEventListener('click', openProfile);
+            if (closeBtn) closeBtn.addEventListener('click', closeProfile);
+            if (overlay) overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeProfile();
+            });
+
+            if (copyBtn) {
+                copyBtn.addEventListener('click', () => {
+                    navigator.clipboard.writeText('2834264571').then(() => {
+                        copyBtn.textContent = '已复制 ✓';
+                        setTimeout(() => { copyBtn.textContent = '复制'; }, 1500);
+                    });
+                });
+            }
+        })();
+    </script>
+
+    <!-- 底部按钮鼠标靠近放大特效 -->
+    <script>
+        (function () {
+            const overlay = document.getElementById('menu-overlay');
+            if (!overlay) return;
+            const RANGE = 150;
+            const MAX_SCALE = 1.18;
+
+            function getWrappers() {
+                return overlay.querySelectorAll('.home-container .home-wrapper');
+            }
+
+            overlay.addEventListener('mousemove', (e) => {
+                getWrappers().forEach(w => {
+                    const btn = w.querySelector('.home-btn, .profile-btn');
+                    const label = w.querySelector('.btn-label');
+                    if (!btn) return;
+                    const rect = btn.getBoundingClientRect();
+                    const cx = rect.left + rect.width / 2;
+                    const cy = rect.top + rect.height / 2;
+                    const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+                    if (dist < RANGE) {
+                        const t = 1 - dist / RANGE;
+                        btn.style.setProperty('--prox', (1 + t * (MAX_SCALE - 1)).toFixed(3));
+                    } else {
+                        btn.style.setProperty('--prox', '1');
+                    }
+                });
+            });
+
+            overlay.addEventListener('mouseleave', () => {
+                getWrappers().forEach(w => {
+                    const btn = w.querySelector('.home-btn, .profile-btn');
+                    const label = w.querySelector('.btn-label');
+                    if (btn) btn.style.setProperty('--prox', '1');
+                });
+            });
+        })();
+    </script>
+
     <!-- 本地 Phaser 3.60 -->
     <script src="js/libs/phaser.min.js"></script>
 
     <!-- 以 ES Module 方式加载游戏脚本 -->
     <script type="module" src="js/main.js"></script>
 </body>
+
 </html>

@@ -20,7 +20,7 @@ export default class BootScene extends Phaser.Scene {
             frameHeight: 395,
         });
 
-        // --- 一次性预加载所有关卡的背景图 + 音乐 ---
+        // --- 一次性预加载所有关卡的背景图 + 音乐 + NPC ---
         const audioLoaded = new Set();
         STORY.levels.forEach((level, idx) => {
             if (level.bgImage) {
@@ -30,6 +30,19 @@ export default class BootScene extends Phaser.Scene {
                 this.load.audio(`bgm:${level.bgMusic}`, level.bgMusic);
                 audioLoaded.add(level.bgMusic);
             }
+            // NPC 精灵图
+            (level.npcs || []).forEach(npc => {
+                if (!this.textures.exists(npc.key)) {
+                    if (npc.frameWidth) {
+                        this.load.spritesheet(npc.key, npc.image, {
+                            frameWidth: npc.frameWidth,
+                            frameHeight: npc.frameHeight,
+                        });
+                    } else {
+                        this.load.image(npc.key, npc.image);
+                    }
+                }
+            });
         });
     }
 
