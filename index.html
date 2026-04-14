@@ -258,6 +258,39 @@
         })();
     </script>
 
+    <!-- ★ 立即绑定 Press Start / Continue 按钮（不依赖 Phaser 加载完成） -->
+    <script>
+        (function () {
+            var STORAGE_KEY = 'acm_journey_last_level';
+            var btnStart = document.getElementById('btn-start');
+            var btnContinue = document.getElementById('btn-continue');
+
+            function startGame(lvIdx) {
+                // 如果 MenuScene 已经就绪，直接调用
+                if (window._menuSceneRef) {
+                    window._menuSceneRef._hideOverlayAndGo(lvIdx);
+                    return;
+                }
+                // Phaser 还在加载中 → 显示反馈 + 排队等候
+                if (btnStart) btnStart.textContent = 'LOADING...';
+                if (btnContinue) btnContinue.textContent = 'LOADING...';
+                window._pendingStart = lvIdx;
+            }
+
+            if (btnStart) {
+                btnStart.addEventListener('click', function () {
+                    startGame(0);
+                });
+            }
+            if (btnContinue) {
+                btnContinue.addEventListener('click', function () {
+                    var saved = parseInt(localStorage.getItem(STORAGE_KEY), 10);
+                    startGame(isNaN(saved) ? 0 : saved);
+                });
+            }
+        })();
+    </script>
+
     <!-- 加载 Phaser (优先本地，失败则跳转 CDN 备用) -->
     <script src="js/libs/phaser.min.js"></script>
     <script>

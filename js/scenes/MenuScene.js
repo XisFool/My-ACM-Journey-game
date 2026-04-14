@@ -30,26 +30,22 @@ export default class MenuScene extends Phaser.Scene {
             overlay.style.display = '';
         }
 
-        // 仅绑定一次 DOM 事件（防止重复绑定）
+        // ★ 暴露自身引用到全局，让 inline script 可以调用 _hideOverlayAndGo
+        window._menuSceneRef = this;
+
+        // 如果用户在 Phaser 加载期间已经点击过按钮，
+        // 此时 _pendingStart 会存在，立即执行
+        if (typeof window._pendingStart === 'number') {
+            const lvIdx = window._pendingStart;
+            delete window._pendingStart;
+            this._hideOverlayAndGo(lvIdx);
+            return;
+        }
+
+        // 仅绑定一次 DOM 事件（防止重复绑定）— 仅绑定 Home 按钮
+        // Press Start / Continue 已经在 index.html inline script 中立即绑定
         if (!this._domBound) {
             this._domBound = true;
-
-            // Press Start 按钮
-            const btnStart = document.getElementById('btn-start');
-            if (btnStart) {
-                btnStart.addEventListener('click', () => {
-                    this._hideOverlayAndGo(0);
-                });
-            }
-
-            // Continue 按钮
-            const btnContinue = document.getElementById('btn-continue');
-            if (btnContinue) {
-                btnContinue.addEventListener('click', () => {
-                    const saved = parseInt(localStorage.getItem(STORAGE_KEY), 10);
-                    this._hideOverlayAndGo(isNaN(saved) ? 0 : saved);
-                });
-            }
 
             // Home 按钮（菜单页的 Home：刷新页面 / 回到首页）
             const homeBtn = document.getElementById('menu-home-btn');
@@ -60,7 +56,6 @@ export default class MenuScene extends Phaser.Scene {
                     this.scene.start('MenuScene');
                 });
             }
-
         }
     }
 
