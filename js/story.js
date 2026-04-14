@@ -33,9 +33,9 @@ export const STORY = {
           frameWidth: 30,
           frameHeight: 31,
           frameRate: 3,         // 1秒3帧
-          afterBlock: 1,        // 放在第2个方块之后（0-indexed）
-          dialog: 'Hi! I am Kirby~!',
-          triggerTime: 2000,    // 停留3秒触发
+          afterBlock: 0,        // 放在第1个方块之后（0-indexed）
+          dialog: 'will walk down this road until the end without looking back？',
+          triggerTime: 2000,    // 停留2秒触发
         }
       ],
 

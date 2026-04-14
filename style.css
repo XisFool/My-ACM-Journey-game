@@ -655,7 +655,7 @@ body {
 
     to {
         opacity: 1;
-        transform: translateX(0) scale(1);
+        transform: translateX(0) scale(1.2);
     }
 }
 
@@ -666,7 +666,7 @@ body {
 @keyframes profileSlideOut {
     from {
         opacity: 1;
-        transform: translateX(0) scale(1);
+        transform: translateX(0) scale(1.2);
     }
 
     to {
