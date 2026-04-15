@@ -2,6 +2,7 @@
    LevelScene.js — 核心游戏场景
    ============================================ */
 import { STORY } from '../story.js';
+import { collectLevelAssets, isLevelPreheated, markLevelPreheated, preloadImage, preloadMemoryImages, queueAssets } from '../utils/AssetHelper.js';
 
 const CFG = {
     W: 960, H: 540,
@@ -32,18 +33,8 @@ export default class LevelScene extends Phaser.Scene {
 
     // ── preload() ────────────────────────────────
     preload() {
-        // 背景加载
-        if (this.levelData.bgImage) {
-            this.load.image(`bg_${this.lvIdx}`, this.levelData.bgImage);
-        }
-        // 音乐加载（同一首歌共用 key，跨关卡共享）
-        if (this.levelData.bgMusic) {
-            const musicKey = `bgm:${this.levelData.bgMusic}`;
-            if (!this.cache.audio.exists(musicKey)) {
-                this.load.audio(musicKey, this.levelData.bgMusic);
-            }
-        }
-        // (其余占位纹理统一已经在 BootScene.js 全局注册了)
+        const assets = collectLevelAssets(this.lvIdx);
+        queueAssets(this, assets);
     }
 
     // ── create() ─────────────────────────────────
@@ -74,8 +65,8 @@ export default class LevelScene extends Phaser.Scene {
         }
 
         // 1. 背景（视差滚动：背景比玩家慢）
-        if (this.levelData.bgImage) {
-            const bgKey = `bg_${this.lvIdx}`;
+        const bgKey = `bg_${this.lvIdx}`;
+        if (this.levelData.bgImage && this.textures.exists(bgKey)) {
             this.bgImage = this.add.image(0, 0, bgKey)
                 .setOrigin(0, 0)
                 .setScrollFactor(CFG.BG_SCROLL, 0)
@@ -291,44 +282,30 @@ export default class LevelScene extends Phaser.Scene {
 
     // ── 后台预加载 ────────────────────────────────
     _preloadBackgroundAssets() {
-        // 1. DOM层预加载本关所有的记忆图片
-        window._levelPreloadedImages = window._levelPreloadedImages || [];
-        const blocksData = this.levelData.memoryBlocks || [];
-        blocksData.forEach(block => {
-            (block.memories || []).forEach(m => {
-                if (m.image) {
-                    const img = new Image();
-                    img.src = m.image;
-                    window._levelPreloadedImages.push(img);
-                }
-            });
-        });
+        // 1. DOM层预加载本关所有的记忆图片（去重）
+        preloadMemoryImages(this.levelData);
 
         // 2. Phaser 层预加载下一关核心资源 (减少过场时间)
         const nextIdx = this.lvIdx + 1;
         if (nextIdx < STORY.levels.length) {
-            const nextData = STORY.levels[nextIdx];
-            if (nextData.bgImage) {
-                this.load.image(`bg_${nextIdx}`, nextData.bgImage);
+            if (isLevelPreheated(nextIdx)) {
+                return;
             }
-            if (nextData.bgMusic && !this.cache.audio.exists(`bgm:${nextData.bgMusic}`)) {
-                this.load.audio(`bgm:${nextData.bgMusic}`, nextData.bgMusic);
+
+            const assets = collectLevelAssets(nextIdx);
+            const queued = queueAssets(this, assets);
+
+            if (queued > 0) {
+                this.load.once(Phaser.Loader.Events.COMPLETE, () => {
+                    markLevelPreheated(nextIdx);
+                });
+                this.load.start(); // 对于非 preload 阶段调用 load，需要手动 start
+            } else {
+                markLevelPreheated(nextIdx);
             }
-            (nextData.npcs || []).forEach(npc => {
-                if (!this.textures.exists(npc.key)) {
-                    if (npc.frameWidth) {
-                        this.load.spritesheet(npc.key, npc.image, { frameWidth: npc.frameWidth, frameHeight: npc.frameHeight });
-                    } else {
-                        this.load.image(npc.key, npc.image);
-                    }
-                }
-            });
-            this.load.start(); // 对于非 preload 阶段调用 load，需要手动 start
         } else {
             // 如果是最后一关，则预加载通关图
-            const endImg = new Image();
-            endImg.src = 'js/Photo/Background/GameOver.webp';
-            window._levelPreloadedImages.push(endImg);
+            preloadImage('js/Photo/Background/GameOver.webp');
         }
     }
 

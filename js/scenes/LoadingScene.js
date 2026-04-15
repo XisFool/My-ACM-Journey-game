@@ -2,7 +2,7 @@
    LoadingScene.js — 进入关卡前加载界面
    ============================================ */
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../config.js';
-import { STORY } from '../story.js';
+import { collectLevelAssets, queueAssets } from '../utils/AssetHelper.js';
 
 export default class LoadingScene extends Phaser.Scene {
     constructor() {
@@ -67,25 +67,8 @@ export default class LoadingScene extends Phaser.Scene {
         });
 
         // --- 按需加载目标关卡资源 ---
-        const lvIdx = this.nextData.lvIdx;
-        const levelData = STORY.levels[lvIdx];
-        if (levelData) {
-            if (levelData.bgImage) {
-                this.load.image(`bg_${lvIdx}`, levelData.bgImage);
-            }
-            if (levelData.bgMusic && !this.cache.audio.exists(`bgm:${levelData.bgMusic}`)) {
-                this.load.audio(`bgm:${levelData.bgMusic}`, levelData.bgMusic);
-            }
-            (levelData.npcs || []).forEach(npc => {
-                if (!this.textures.exists(npc.key)) {
-                    if (npc.frameWidth) {
-                        this.load.spritesheet(npc.key, npc.image, { frameWidth: npc.frameWidth, frameHeight: npc.frameHeight });
-                    } else {
-                        this.load.image(npc.key, npc.image);
-                    }
-                }
-            });
-        }
+        const assets = collectLevelAssets(this.nextData.lvIdx);
+        queueAssets(this, assets);
     }
 
     create() {
