@@ -1,8 +1,6 @@
 /* ============================================
    BootScene.js — 预加载资源 & 生成全局纹理
    ============================================ */
-import { CANVAS_WIDTH, CANVAS_HEIGHT, COLORS } from '../config.js';
-import { STORY } from '../story.js';
 
 export default class BootScene extends Phaser.Scene {
     constructor() {
@@ -71,40 +69,7 @@ export default class BootScene extends Phaser.Scene {
             g.destroy();
         }
 
-        // --- 3. 生成地面纹理（砖块纹理） ---
-        if (!this.textures.exists('ground')) {
-            const g = this.make.graphics({ x: 0, y: 0, add: false });
-            g.fillStyle(0x8B4513); g.fillRect(0, 0, 64, 32);
-            g.fillStyle(0x6B3410); g.fillRect(0, 0, 64, 3);
-            g.fillStyle(0x6B3410); g.fillRect(0, 29, 64, 3);
-            g.fillStyle(0x6B3410); g.fillRect(30, 0, 3, 32);
-            
-            g.generateTexture('ground', 64, 32);
-            g.destroy();
-        }
-
-        // --- 4. 生成平台纹理 ---
-        if (!this.textures.exists('platform')) {
-            const g = this.make.graphics({ x: 0, y: 0, add: false });
-            g.fillStyle(0x8b7355); g.fillRect(0, 0, 32, 16);
-            g.fillStyle(0xaa9977); g.fillRect(0, 0, 32, 3);
-            
-            g.generateTexture('platform', 32, 16);
-            g.destroy();
-        }
-        
-        // --- 生成菜单粒子纹理（圆形，带柔边） ---
-        if (!this.textures.exists('particle_glow')) {
-            const g = this.make.graphics({ x: 0, y: 0, add: false });
-            g.fillStyle(0xffffff, 1);
-            g.fillCircle(8, 8, 8);
-            g.fillStyle(0xffffff, 0.4);
-            g.fillCircle(8, 8, 6);
-            g.generateTexture('particle_glow', 16, 16);
-            g.destroy();
-        }
-
-        // --- 生成下雪粒子纹理（兼容之前 LevelScene.js 粒子） ---
+        // --- 3. 生成下雪粒子纹理（兼容之前 LevelScene.js 粒子） ---
         if (!this.textures.exists('particle_snow')) {
             const g = this.make.graphics({ x: 0, y: 0, add: false });
             g.fillStyle(0xffffff);

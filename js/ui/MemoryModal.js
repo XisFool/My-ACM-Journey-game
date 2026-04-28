@@ -3,6 +3,7 @@
    动态创建挂载到 body，不依赖 Phaser。
    支持图片 + 文字混合展示，点击图片/导航翻页
    ============================================ */
+import { getPreloadedImage, preloadImage } from '../utils/AssetHelper.js';
 
 class MemoryModalController {
     constructor() {
@@ -78,12 +79,14 @@ class MemoryModalController {
         this.onCloseFn = onCloseFn;
         this.index = 0;
 
-        // 预加载并持久化存储图片对象（防止被GC取消请求）
+        // 优先复用 AssetHelper 已预加载的图片，避免重复 new Image / 解码
         this._preloaded = slides.map(s => {
             if (!s.image) return null;
-            const img = new Image();
-            img.src = s.image;
-            return img;
+            const cached = getPreloadedImage(s.image);
+            if (cached) return cached;
+            // 兜底：未预热过则即时入队（同时写入共享缓存，下次复用）
+            preloadImage(s.image);
+            return getPreloadedImage(s.image);
         });
 
         this.overlay.style.display = 'flex';
@@ -99,13 +102,13 @@ class MemoryModalController {
             this.imageEl.style.display = 'block';
             this.imageEl.style.cursor = (this.index < total - 1) ? 'pointer' : 'default';
             const pre = this._preloaded && this._preloaded[this.index];
-            if (pre && pre.complete) {
-                // 图片已缓存，直接淡入
+            if (pre && pre.complete && pre.naturalWidth > 0) {
+                // 图片已成功缓存，直接淡入
                 this.imageEl.style.opacity = '0';
                 this.imageEl.src = pre.src;
                 requestAnimationFrame(() => { this.imageEl.style.opacity = '1'; });
             } else {
-                // 仍在加载，监听完成后淡入
+                // 仍在加载（或缓存失效），监听完成后淡入
                 this.imageEl.style.opacity = '0';
                 this.imageEl.src = slide.image;
                 this.imageEl.onload = () => { this.imageEl.style.opacity = '1'; };

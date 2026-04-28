@@ -90,6 +90,11 @@ export function preloadImage(src) {
     preloadedImageMap.set(src, img);
 }
 
+export function getPreloadedImage(src) {
+    if (!src) return null;
+    return preloadedImageMap.get(src) || null;
+}
+
 export function preloadMemoryImages(levelData) {
     (levelData.memoryBlocks || []).forEach((block) => {
         (block.memories || []).forEach((memory) => {

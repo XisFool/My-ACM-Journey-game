@@ -1,0 +1,15 @@
+# Windsurf 工作区个人配置（含本地规则、不提交）
+.windsurf/
+
+# 个人开发进度笔记
+Progress.md
+
+# Playwright MCP 测试产物
+.playwright-mcp/
+
+# 日志
+*.log
+
+# 系统垃圾文件
+Thumbs.db
+.DS_Store

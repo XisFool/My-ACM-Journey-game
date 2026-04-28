@@ -248,30 +248,32 @@ export default class LevelScene extends Phaser.Scene {
         if (gameHomeContainer) gameHomeContainer.style.display = 'flex';
 
         // 移除旧监听器（防止重复绑定）
-        const newGameHomeBtn = gameHomeBtn.cloneNode(true);
-        gameHomeBtn.parentNode.replaceChild(newGameHomeBtn, gameHomeBtn);
+        if (gameHomeBtn && gameHomeBtn.parentNode) {
+            const newGameHomeBtn = gameHomeBtn.cloneNode(true);
+            gameHomeBtn.parentNode.replaceChild(newGameHomeBtn, gameHomeBtn);
 
-        newGameHomeBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.sound.stopAll();
-            this.registry.set('_bgmKey', null);
-            this.registry.set('_bgmObj', null);
-            if (gameHomeContainer) gameHomeContainer.style.display = 'none';
-            this.cameras.main.fadeOut(400, 0, 0, 0);
-            this.cameras.main.once('camerafadeoutcomplete', () => {
-                const overlay = document.getElementById('menu-overlay');
-                if (overlay) overlay.classList.remove('hidden');
-                this.scene.start('MenuScene');
+            newGameHomeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.sound.stopAll();
+                this.registry.set('_bgmKey', null);
+                this.registry.set('_bgmObj', null);
+                if (gameHomeContainer) gameHomeContainer.style.display = 'none';
+                this.cameras.main.fadeOut(400, 0, 0, 0);
+                this.cameras.main.once('camerafadeoutcomplete', () => {
+                    const overlay = document.getElementById('menu-overlay');
+                    if (overlay) overlay.classList.remove('hidden');
+                    this.scene.start('MenuScene');
+                });
             });
-        });
+        }
 
         // 粒子系统
         if (this.levelData.particle) {
             this._createParticles();
         }
 
-        // 淡入
-        this.cameras.main.fadeIn(500, parseInt(this.levelData.bgColor.replace("#", ""), 16));
+        // 淡入（黑→透明，与 fadeOut 对齐；避免把整个 hex 当 red 通道传导致红屏）
+        this.cameras.main.fadeIn(500, 0, 0, 0);
 
         // 延迟 1.5 秒后，在后台静默预加载本关剧情图片与下一关资源
         // 不会阻塞主线程和玩家操作
@@ -282,16 +284,19 @@ export default class LevelScene extends Phaser.Scene {
 
     // ── 后台预加载 ────────────────────────────────
     _preloadBackgroundAssets() {
-        // 1. DOM层预加载本关所有的记忆图片（去重）
+        // 1. DOM 层：本关 + 下一关 memory 图片预热（去重幂等）
         preloadMemoryImages(this.levelData);
-
-        // 2. Phaser 层预加载下一关核心资源 (减少过场时间)
         const nextIdx = this.lvIdx + 1;
-        if (nextIdx < STORY.levels.length) {
-            if (isLevelPreheated(nextIdx)) {
-                return;
-            }
+        const nextLevel = STORY.levels[nextIdx];
+        if (nextLevel) {
+            preloadMemoryImages(nextLevel);
+        } else {
+            // 最后一关：预热通关图
+            preloadImage('js/Photo/Background/GameOver.webp');
+        }
 
+        // 2. Phaser 层：下一关 bg / bgm / npc 预热
+        if (nextLevel && !isLevelPreheated(nextIdx)) {
             const assets = collectLevelAssets(nextIdx);
             const queued = queueAssets(this, assets);
 
@@ -299,13 +304,10 @@ export default class LevelScene extends Phaser.Scene {
                 this.load.once(Phaser.Loader.Events.COMPLETE, () => {
                     markLevelPreheated(nextIdx);
                 });
-                this.load.start(); // 对于非 preload 阶段调用 load，需要手动 start
+                this.load.start(); // 非 preload 阶段调用 load，需要手动 start
             } else {
                 markLevelPreheated(nextIdx);
             }
-        } else {
-            // 如果是最后一关，则预加载通关图
-            preloadImage('js/Photo/Background/GameOver.webp');
         }
     }
 

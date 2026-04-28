@@ -2,9 +2,6 @@
    MenuScene.js — 主菜单场景
    使用 HTML DOM 遮罩层（other/ 风格），Phaser 画布仅黑屏待命
    ============================================ */
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../config.js';
-
-const STORAGE_KEY = 'acm_journey_last_level';
 
 export default class MenuScene extends Phaser.Scene {
     constructor() {
