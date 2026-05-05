@@ -10,7 +10,7 @@
     <!-- Google Fonts（国内镜像） -->
     <link rel="preconnect" href="https://fonts.loli.net">
     <link
-        href="https://fonts.loli.net/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&family=Noto+Sans+SC:wght@400;700&display=swap"
+        href="https://fonts.loli.net/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&family=Noto+Sans+SC:wght@400;700;900&family=Outfit:wght@800;900&display=swap"
         rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
@@ -32,24 +32,35 @@
             <div class="explore-container">
                 <div class="explore-text">move mouse to explore</div>
             </div>
-            <div class="home-container">
-                <div class="home-wrapper">
-                    <span class="btn-label">Home</span>
-                    <a href="#" class="home-btn" id="menu-home-btn">
-                        <i class="fa-solid fa-house"></i>
-                    </a>
-                </div>
-                <div class="home-wrapper">
-                    <span class="btn-label">About</span>
-                    <a href="#" class="profile-btn" id="menu-profile-btn">
-                        <i class="fa-solid fa-user"></i>
-                    </a>
-                </div>
+        </div>
+        
+        <!-- ====== Project 面板 (全屏 3D Intro) ====== -->
+        <!-- Inner DOM is built dynamically by js/ui/ProjectPage.js on open -->
+        <div id="project-overlay" class="hidden">
+            <button class="project-close" id="project-close-btn">&times;</button>
+        </div>
+
+        <div class="home-container">
+            <div class="home-wrapper">
+                <span class="btn-label">Home</span>
+                <a href="#" class="home-btn" id="menu-home-btn">
+                    <i class="fa-solid fa-house"></i>
+                </a>
+            </div>
+            <div class="home-wrapper">
+                <span class="btn-label">Projects</span>
+                <a href="#" class="project-btn" id="menu-project-btn">
+                    <i class="fa-solid fa-box"></i>
+                </a>
+            </div>
+            <div class="home-wrapper">
+                <span class="btn-label">About</span>
+                <a href="#" class="profile-btn" id="menu-profile-btn">
+                    <i class="fa-solid fa-user"></i>
+                </a>
             </div>
         </div>
     </div>
-
-    <!-- ====== Profile 面板 ====== -->
     <div id="profile-overlay" class="profile-overlay hidden">
         <div class="profile-panel">
             <div class="profile-gradient-bar"></div>
@@ -152,6 +163,7 @@
             const icon = toggleBtn ? toggleBtn.querySelector('i') : null;
 
             const profileOverlay = document.getElementById('profile-overlay');
+            const projectOverlay = document.getElementById('project-overlay');
 
             function applyTheme(theme) {
                 overlay.dataset.theme = theme;
@@ -159,9 +171,12 @@
                     icon.className = theme === 'night' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
                 }
                 document.body.style.background = theme === 'night' ? '#000000' : '#ffffff';
-                // 同步 Profile 面板主题
+                // 同步 Profile/Project 面板主题
                 if (profileOverlay) {
                     profileOverlay.classList.toggle('night', theme === 'night');
+                }
+                if (projectOverlay) {
+                    projectOverlay.classList.toggle('night', theme === 'night');
                 }
             }
 
@@ -179,32 +194,81 @@
         })();
     </script>
 
-    <!-- Profile 面板 open/close + QQ复制 -->
+    <!-- Profile/Project 面板 open/close + QQ复制 -->
     <script>
         (function () {
-            const overlay = document.getElementById('profile-overlay');
-            const openBtn = document.getElementById('menu-profile-btn');
-            const closeBtn = document.getElementById('profile-close-btn');
+            const profileOverlay = document.getElementById('profile-overlay');
+            const profileOpenBtn = document.getElementById('menu-profile-btn');
+            const profileCloseBtn = document.getElementById('profile-close-btn');
+            
+            const projectOverlay = document.getElementById('project-overlay');
+            const projectOpenBtn = document.getElementById('menu-project-btn');
+            const projectCloseBtn = document.getElementById('project-close-btn');
+            const homeContainer = document.querySelector('.home-container');
+            
             const copyBtn = document.getElementById('profile-copy-qq');
 
-            function openProfile(e) {
+            function openPanel(panel, e) {
                 if (e) e.preventDefault();
-                overlay.classList.remove('hidden', 'closing');
+                panel.classList.remove('hidden', 'closing');
             }
 
-            function closeProfile() {
-                overlay.classList.add('closing');
-                overlay.addEventListener('animationend', function handler() {
-                    overlay.classList.add('hidden');
-                    overlay.classList.remove('closing');
-                    overlay.removeEventListener('animationend', handler);
+            function closePanel(panel) {
+                panel.classList.add('closing');
+                panel.addEventListener('animationend', function handler() {
+                    panel.classList.add('hidden');
+                    panel.classList.remove('closing');
+                    panel.removeEventListener('animationend', handler);
                 });
             }
 
-            if (openBtn) openBtn.addEventListener('click', openProfile);
-            if (closeBtn) closeBtn.addEventListener('click', closeProfile);
-            if (overlay) overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) closeProfile();
+            function replayEntrance() {
+                const els = document.querySelectorAll('.main-text, .sub-text, .hero-cta, .explore-container, .home-wrapper');
+                els.forEach(el => {
+                    el.style.animation = 'none';
+                    el.offsetHeight; // force reflow
+                    el.style.animation = '';
+                });
+            }
+
+            function closeProjectPanel() {
+                closePanel(projectOverlay);
+                if (homeContainer) homeContainer.style.display = '';
+                replayEntrance();
+            }
+
+            // Profile
+            if (profileOpenBtn) profileOpenBtn.addEventListener('click', (e) => openPanel(profileOverlay, e));
+            if (profileCloseBtn) profileCloseBtn.addEventListener('click', () => closePanel(profileOverlay));
+            if (profileOverlay) profileOverlay.addEventListener('click', (e) => {
+                if (e.target === profileOverlay) closePanel(profileOverlay);
+            });
+            
+            // Project — dynamic init/destroy of 3D intro page
+            let projectPageMod = null;
+            async function ensureProjectMod() {
+                if (!projectPageMod) {
+                    projectPageMod = await import('./js/ui/ProjectPage.js');
+                }
+                return projectPageMod;
+            }
+            if (projectOpenBtn) projectOpenBtn.addEventListener('click', async (e) => {
+                openPanel(projectOverlay, e);
+                if (homeContainer) homeContainer.style.display = 'none';
+                const mod = await ensureProjectMod();
+                mod.initProjectPage();
+            });
+            async function doCloseProjectPanel() {
+                const mod = await ensureProjectMod();
+                mod.destroyProjectPage();
+                closeProjectPanel();
+            }
+            // Custom event fired from the dynamic close button inside ProjectPage
+            if (projectOverlay) projectOverlay.addEventListener('pj:request-close', () => doCloseProjectPanel());
+            // Fallback: direct binding (will be overridden when JS rebuilds the DOM, but harmless)
+            if (projectCloseBtn) projectCloseBtn.addEventListener('click', () => doCloseProjectPanel());
+            if (projectOverlay) projectOverlay.addEventListener('click', (e) => {
+                if (e.target === projectOverlay) doCloseProjectPanel();
             });
 
             if (copyBtn) {
@@ -232,7 +296,7 @@
 
             overlay.addEventListener('mousemove', (e) => {
                 getWrappers().forEach(w => {
-                    const btn = w.querySelector('.home-btn, .profile-btn');
+                    const btn = w.querySelector('.home-btn, .profile-btn, .project-btn');
                     const label = w.querySelector('.btn-label');
                     if (!btn) return;
                     const rect = btn.getBoundingClientRect();
@@ -250,7 +314,7 @@
 
             overlay.addEventListener('mouseleave', () => {
                 getWrappers().forEach(w => {
-                    const btn = w.querySelector('.home-btn, .profile-btn');
+                    const btn = w.querySelector('.home-btn, .profile-btn, .project-btn');
                     const label = w.querySelector('.btn-label');
                     if (btn) btn.style.setProperty('--prox', '1');
                 });

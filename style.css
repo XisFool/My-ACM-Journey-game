@@ -111,10 +111,10 @@ body {
         0% 0%, 
         100% 0%, 
         100% 100%, 
-        calc(50% + 60px) 100%, 
-        calc(50% + 60px) calc(100% - 5px), 
-        calc(50% - 60px) calc(100% - 5px), 
-        calc(50% - 60px) 100%, 
+        calc(50% + 105px) 100%, 
+        calc(50% + 105px) calc(100% - 5px), 
+        calc(50% - 105px) calc(100% - 5px), 
+        calc(50% - 105px) 100%, 
         0% 100%
     );
 }
@@ -251,15 +251,15 @@ body {
 /* Home & Profile 按钮 — 嵌入玻璃底边线 */
 .home-container {
     position: absolute;
-    bottom: 0;
+    bottom: 8.6vh;
     left: 0;
     right: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     transform: translateY(50%);
-    z-index: 2;
+    z-index: 20;
 }
 
 
@@ -273,7 +273,7 @@ body {
     position: relative;
     z-index: 1;
     /* 按钮独立上移（修改这里调整高度，不影响线段） */
-    margin-bottom: 10px;
+    margin-bottom: 24px;
 }
 
 /* 按钮上方悬浮标签 */
@@ -299,7 +299,7 @@ body {
 }
 
 /* profile 图标跟随主题色 */
-.profile-btn i {
+.profile-btn i, .project-btn i {
     color: var(--th-text-primary) !important;
 }
 
@@ -336,8 +336,8 @@ body {
     color: var(--th-accent);
 }
 
-/* 橙色 Profile 按钮 */
-.profile-btn {
+/* 橙色 Profile / Project 按钮 */
+.profile-btn, .project-btn {
     --prox: 1;
     height: 36px;
     width: 36px;
@@ -355,7 +355,7 @@ body {
     text-decoration: none;
 }
 
-.profile-btn:hover {
+.profile-btn:hover, .project-btn:hover {
     border-color: grey;
     transform: scale(var(--prox)) rotate(360deg);
     color: var(--th-accent);
@@ -599,7 +599,7 @@ body {
 }
 
 /* 黑夜模式 */
-.profile-overlay.night {
+.profile-overlay.night, #project-overlay.night {
     --da-bg: #0a0e14;
     --da-border: rgba(0, 243, 255, 0.2);
     --da-border-hover: rgba(0, 243, 255, 0.5);
@@ -879,4 +879,682 @@ body {
     border-color: var(--da-orange);
     color: var(--da-amber);
     transform: translateY(-2px);
+}
+
+/* ============================================
+   Project 面板 — 3D Intro 风格 (全屏)
+   所有视觉变量由 --pj-* 驱动，跟随 #project-overlay.night 切换主题
+   ============================================ */
+
+/* 白天（默认） */
+#project-overlay {
+    --pj-bg: #fffaeb;
+    --pj-bg-nav: rgba(255, 250, 235, 0.72);
+    --pj-text-strong: #1a0800;
+    --pj-text-mid: #4a2a10;
+    --pj-text-mute: rgba(26, 8, 0, 0.5);
+    --pj-text-faint: rgba(26, 8, 0, 0.18);
+    --pj-accent: #fa520f;
+    --pj-accent-soft: rgba(250, 82, 15, 0.08);
+    --pj-card-bg: #ffffff;
+    --pj-card-border: rgba(250, 82, 15, 0.15);
+    --pj-card-shadow: 0 4px 24px rgba(127, 99, 21, 0.08);
+    --pj-card-shadow-hover: 0 12px 48px rgba(250, 82, 15, 0.18);
+    --pj-tag-bg: rgba(250, 82, 15, 0.06);
+    --pj-tag-text: #7a3d10;
+    --pj-tag-bg-hover: #1a0800;
+    --pj-tag-text-hover: #ffffff;
+    --pj-nav-bg: #fffaeb;
+    --pj-mask-bg: #0a0800;
+    --pj-mask-text: #ffffff;
+    --pj-mask-text-body: #3a2a20;
+    --pj-grid-dot: rgba(250, 82, 15, 0.28);
+    --pj-hint: #a46030;
+}
+
+/* 夜晚 */
+#project-overlay.night {
+    --pj-bg: #0a0e14;
+    --pj-bg-nav: rgba(10, 14, 20, 0.72);
+    --pj-text-strong: #e0f4f4;
+    --pj-text-mid: #9fd8df;
+    --pj-text-mute: rgba(224, 244, 244, 0.5);
+    --pj-text-faint: rgba(224, 244, 244, 0.12);
+    --pj-accent: #00f3ff;
+    --pj-accent-soft: rgba(0, 243, 255, 0.1);
+    --pj-card-bg: #0f1620;
+    --pj-card-border: rgba(0, 243, 255, 0.2);
+    --pj-card-shadow: 0 4px 24px rgba(0, 243, 255, 0.06);
+    --pj-card-shadow-hover: 0 12px 48px rgba(0, 243, 255, 0.2);
+    --pj-tag-bg: rgba(0, 243, 255, 0.08);
+    --pj-tag-text: #a0e8ee;
+    --pj-tag-bg-hover: #00f3ff;
+    --pj-tag-text-hover: #050a0f;
+    --pj-nav-bg: #0a0e14;
+    --pj-mask-bg: #002830;
+    --pj-mask-text: #ffffff;
+    --pj-mask-text-body: #6ad6de;
+    --pj-grid-dot: rgba(0, 243, 255, 0.28);
+    --pj-hint: #6ad6de;
+}
+
+#project-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 600;
+    background: var(--pj-bg);
+    overflow-y: auto;
+    overflow-x: hidden;
+    font-family: 'Outfit', 'Noto Sans SC', sans-serif;
+    color: var(--pj-text-strong);
+    animation: pjFadeIn 0.35s ease both;
+    cursor: none;
+}
+
+#project-overlay.hidden {
+    display: none;
+    animation: none;
+}
+
+#project-overlay.closing {
+    animation: pjFadeOut 0.28s ease both;
+}
+
+@keyframes pjFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes pjFadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+#project-overlay a,
+#project-overlay button {
+    cursor: none;
+}
+
+#project-overlay ::selection {
+    background: var(--pj-accent-soft);
+}
+
+/* 关闭按钮 */
+#project-overlay .project-close {
+    position: fixed;
+    top: 18px;
+    right: 28px;
+    background: var(--pj-card-bg);
+    border: 1px solid var(--pj-card-border);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-family: 'Outfit', sans-serif;
+    font-size: 24px;
+    font-weight: 300;
+    color: var(--pj-text-strong);
+    transition: color 0.2s, border-color 0.2s, transform 0.3s;
+    z-index: 120;
+    line-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#project-overlay .project-close:hover {
+    color: var(--pj-accent);
+    border-color: var(--pj-accent);
+    transform: rotate(90deg);
+}
+
+/* 点阵背景 Canvas */
+#project-overlay .pj-bg-grid {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.55;
+}
+
+/* 自定义光标 */
+#project-overlay .pj-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    background: var(--pj-accent);
+    box-shadow: 0 0 12px var(--pj-accent), 0 0 24px var(--pj-accent);
+    pointer-events: none;
+    z-index: 200;
+    mix-blend-mode: normal;
+    transition: background 0.4s;
+}
+
+/* 遮罩层（反色 Hero） */
+#project-overlay .pj-mask-container {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: var(--pj-mask-bg);
+    pointer-events: none;
+    clip-path: circle(0px at 50% 50%);
+    will-change: clip-path;
+    transition: background 0.4s;
+}
+
+#project-overlay .pj-mask-scroll {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100vh;
+}
+
+/* Hero 区 */
+#project-overlay .pj-hero-wrap {
+    position: absolute;
+    top: 50vh;
+    left: 50vw;
+    width: 100%;
+    height: 100%;
+    perspective: 1200px;
+    pointer-events: none;
+}
+
+#project-overlay .pj-scene {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    will-change: transform;
+}
+
+/* 30 层 3D 文字 */
+#project-overlay .pj-3d-text {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    font-family: 'Outfit', 'Noto Sans SC', sans-serif;
+    font-weight: 900;
+    font-size: clamp(2.5rem, 8vw, 6rem);
+    letter-spacing: 0.02em;
+    line-height: 1;
+    white-space: nowrap;
+    user-select: none;
+    text-transform: uppercase;
+    transform-style: preserve-3d;
+}
+
+#project-overlay .pj-3d-text-layer {
+    grid-column-start: 1;
+    grid-row-start: 1;
+    display: block;
+    pointer-events: none;
+    color: var(--pj-text-faint);
+}
+
+/* 正色版本 */
+#project-overlay .pj-3d-text--base .pj-3d-text-layer { color: #cbd5e1; }
+#project-overlay.night .pj-3d-text--base .pj-3d-text-layer { color: #1a2430; }
+#project-overlay .pj-3d-text--base .pj-3d-text-front { color: var(--pj-text-strong); }
+
+/* 反色版本（mask 内） */
+#project-overlay .pj-3d-text--mask .pj-3d-text-layer { color: var(--pj-mask-text-body); }
+#project-overlay .pj-3d-text--mask .pj-3d-text-front {
+    color: var(--pj-mask-text);
+    text-shadow: 0 0 30px rgba(255,255,255,0.4);
+}
+
+#project-overlay .pj-hero-sub {
+    margin-top: 16px;
+    font-family: 'Outfit', 'Noto Sans SC', sans-serif;
+    font-size: clamp(0.75rem, 1.6vw, 1.125rem);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+#project-overlay .pj-section--hero {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    perspective: 1200px;
+    scroll-snap-align: start;
+}
+
+#project-overlay .pj-hero-hover {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 85vw;
+    max-width: 900px;
+    height: 35vh;
+    min-height: 300px;
+    z-index: 40;
+}
+
+#project-overlay .pj-hero-guide {
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    color: var(--pj-text-mute);
+    pointer-events: none;
+}
+
+/* 顶部 Nav */
+#project-overlay .pj-nav {
+    position: fixed;
+    top: 22px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    z-index: 110;
+    pointer-events: none;
+}
+
+#project-overlay .pj-nav-pill {
+    display: flex;
+    gap: 4px;
+    background: var(--pj-bg-nav);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 4px;
+    border-radius: 9999px;
+    border: 1px solid var(--pj-card-border);
+    pointer-events: auto;
+}
+
+#project-overlay .pj-nav-btn {
+    padding: 6px 20px;
+    border-radius: 9999px;
+    background: transparent;
+    border: none;
+    color: var(--pj-text-strong);
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background 0.2s, color 0.2s;
+}
+
+#project-overlay .pj-nav-btn:hover {
+    background: var(--pj-accent-soft);
+}
+
+#project-overlay .pj-nav-btn.is-active {
+    background: var(--pj-accent);
+    color: #ffffff;
+}
+#project-overlay.night .pj-nav-btn.is-active {
+    color: #050a0f;
+}
+
+/* 内容滚动区 */
+#project-overlay .pj-content {
+    position: relative;
+    z-index: 10;
+}
+
+/* Section 公共 */
+#project-overlay .pj-section {
+    position: relative;
+    z-index: 10;
+    scroll-snap-align: start;
+}
+
+#project-overlay .pj-section--projects,
+#project-overlay .pj-section--contact {
+    width: 100%;
+    max-width: 1024px;
+    margin: 0 auto;
+    padding: 96px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+}
+
+#project-overlay .pj-sec-header h2 {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-weight: 900;
+    font-size: clamp(2rem, 5vw, 3rem);
+    letter-spacing: -0.02em;
+    color: var(--pj-text-strong);
+    margin: 0 0 24px 0;
+}
+
+#project-overlay .pj-sec-underline {
+    width: 48px;
+    height: 4px;
+    background: var(--pj-text-strong);
+}
+
+/* 项目卡 */
+#project-overlay .pj-card-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 80px;
+    padding-bottom: 64px;
+}
+
+#project-overlay .pj-card {
+    position: relative;
+    padding: 40px;
+    border-radius: 24px;
+    background: var(--pj-card-bg);
+    box-shadow: var(--pj-card-shadow);
+    border: 1px solid var(--pj-card-border);
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    min-height: 380px;
+    will-change: transform;
+    transform-style: preserve-3d;
+    transition: transform 0.5s ease-out, box-shadow 0.4s;
+}
+
+#project-overlay .pj-card.is-hovered {
+    box-shadow: var(--pj-card-shadow-hover);
+}
+
+@media (min-width: 768px) {
+    #project-overlay .pj-card {
+        flex-direction: row;
+        gap: 48px;
+    }
+    #project-overlay .pj-card--odd {
+        flex-direction: row-reverse;
+    }
+}
+
+#project-overlay .pj-card-content {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+    flex: 1;
+}
+
+#project-overlay .pj-card-num {
+    position: absolute;
+    top: -16px;
+    left: -8px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    font-size: clamp(4rem, 10vw, 8rem);
+    color: var(--pj-text-faint);
+    opacity: 0.6;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    pointer-events: none;
+    z-index: 0;
+}
+
+#project-overlay .pj-card-title {
+    position: relative;
+    z-index: 1;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.5rem, 3vw, 1.875rem);
+    letter-spacing: -0.02em;
+    color: var(--pj-text-strong);
+    margin: 24px 0 16px 0;
+}
+
+#project-overlay .pj-card-tags {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+#project-overlay .pj-card-tag {
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--pj-tag-bg);
+    color: var(--pj-tag-text);
+    border: 1px solid var(--pj-card-border);
+    white-space: nowrap;
+    transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+
+#project-overlay .pj-card.is-hovered .pj-card-tag {
+    background: var(--pj-tag-bg-hover);
+    color: var(--pj-tag-text-hover);
+    border-color: var(--pj-tag-bg-hover);
+}
+
+#project-overlay .pj-card-desc {
+    position: relative;
+    z-index: 1;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: clamp(0.875rem, 1.4vw, 1rem);
+    line-height: 1.6;
+    color: var(--pj-text-mute);
+    max-width: 60ch;
+    padding-bottom: 32px;
+    flex-grow: 1;
+    margin: 0;
+}
+
+#project-overlay .pj-card-year {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    font-family: 'Outfit', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--pj-text-mute);
+}
+
+#project-overlay .pj-card-img {
+    position: relative;
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    min-height: 220px;
+    pointer-events: none;
+    background: var(--pj-accent-soft);
+}
+
+@media (min-width: 768px) {
+    #project-overlay .pj-card-img {
+        width: 50%;
+        min-height: auto;
+    }
+    #project-overlay .pj-card-content {
+        width: 50%;
+    }
+}
+
+#project-overlay .pj-card-img img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* 联系卡 */
+#project-overlay .pj-contact-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding-bottom: 128px;
+}
+
+@media (min-width: 768px) {
+    #project-overlay .pj-contact-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 32px;
+    }
+}
+
+#project-overlay .pj-contact-card {
+    background: var(--pj-card-bg);
+    border: 1px solid var(--pj-card-border);
+    border-radius: 32px;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: var(--pj-card-shadow);
+    text-decoration: none;
+    color: var(--pj-text-strong);
+    transition: transform 0.5s, box-shadow 0.5s, border-color 0.3s;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Noto Sans SC', sans-serif;
+}
+
+#project-overlay .pj-contact-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--pj-card-shadow-hover);
+    border-color: var(--pj-accent);
+}
+
+#project-overlay .pj-contact-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    background: var(--pj-text-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    color: var(--pj-bg);
+    font-size: 28px;
+    transition: transform 0.5s, background 0.4s;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+/* 对抗全局 * { color:... } 选择器，显式给图标字色 */
+#project-overlay .pj-contact-icon i {
+    color: var(--pj-bg);
+}
+
+#project-overlay .pj-contact-card:hover .pj-contact-icon,
+#project-overlay .pj-contact-card:hover .pj-contact-icon i {
+    color: #ffffff;
+}
+
+#project-overlay .pj-contact-card:hover .pj-contact-icon {
+    transform: scale(1.1) rotate(-6deg);
+    background: var(--pj-accent);
+}
+
+#project-overlay.night .pj-contact-card:hover .pj-contact-icon,
+#project-overlay.night .pj-contact-card:hover .pj-contact-icon i {
+    color: #050a0f;
+}
+
+#project-overlay .pj-contact-card h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: var(--pj-text-strong);
+    transition: color 0.3s;
+}
+
+#project-overlay .pj-contact-card:hover h3 {
+    color: var(--pj-accent);
+}
+
+#project-overlay .pj-contact-val {
+    font-family: 'Outfit', monospace;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--pj-text-strong);
+    margin: 0 0 16px 0;
+}
+
+#project-overlay .pj-contact-hint {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--pj-text-mute);
+    transition: color 0.3s;
+    margin: 0;
+}
+
+#project-overlay .pj-contact-card:hover .pj-contact-hint {
+    color: var(--pj-accent);
+}
+
+/* 微信卡：复制反馈 */
+#project-overlay .pj-contact-card--wechat {
+    border: 1px solid var(--pj-card-border);
+    font-family: 'Noto Sans SC', sans-serif;
+    width: 100%;
+}
+
+#project-overlay .pj-wechat-hint-wrap {
+    position: relative;
+    width: 100%;
+    height: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+#project-overlay .pj-wechat-hint {
+    position: absolute;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 0;
+    transition: transform 0.3s, opacity 0.3s, color 0.3s;
+}
+
+#project-overlay .pj-wechat-hint--idle {
+    color: var(--pj-text-mute);
+    transform: translateY(0);
+    opacity: 1;
+}
+
+#project-overlay .pj-wechat-hint--done {
+    color: #22c55e;
+    font-weight: 700;
+    transform: translateY(32px);
+    opacity: 0;
+}
+
+#project-overlay .pj-contact-card--wechat:hover .pj-wechat-hint--idle {
+    color: var(--pj-accent);
+}
+
+#project-overlay .pj-contact-card--wechat.is-copied .pj-wechat-hint--idle {
+    transform: translateY(-32px);
+    opacity: 0;
+}
+
+#project-overlay .pj-contact-card--wechat.is-copied .pj-wechat-hint--done {
+    transform: translateY(0);
+    opacity: 1;
 }
