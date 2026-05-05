@@ -1,12 +1,12 @@
 # AGENTS.md — My ACM Journey
 
-> 面向 AI 编码 Agent 的项目上下文速查（README 之外的补充）。最后更新：2026-05-05。
+> 面向 AI 编码 Agent 的项目上下文速查。最后更新：2026-05-05。
 
 ## 为什么有这个文件
 
-- `README.md` 面向人类贡献者：快速介绍、截图、故事化描述。
+- 当前仓库暂未提供 `README.md`；若后续新增，可面向人类贡献者放快速介绍、截图、故事化描述。
 - `AGENTS.md` 面向 Agent：构建步骤、目录语义、约定、边界，一次给全，避免翻源码猜测。
-- 两者分离，互不污染。
+- 若同时存在 `README.md` 与 `AGENTS.md`，两者应分离，互不污染。
 
 ---
 
@@ -51,7 +51,7 @@ my-acm-journey/
 │       ├── Projects/         # Project 面板 3D Intro 卡图 01-03.webp（用户提供）
 │       └── *_memo/           # 各关剧情图 A/B/C 系列 .webp
 ├── Planning.md               # Profile 面板设计文档
-├── Progress.md               # 开发进度笔记（.gitignore 排除）
+├── Progress.md               # 本地开发进度笔记（.gitignore 排除，不一定随仓库提供）
 └── AGENTS.md                 # 本文件（面向 AI Agent 的上下文速查）
 ```
 
@@ -67,7 +67,8 @@ BootScene  ──→  MenuScene  ──→  LoadingScene  ──→  LevelScene
   │                │                 │                  │ 1.5s后静默预热下一关
 ```
 
-**关卡间跳转**: `LevelScene.goNextLevel()` → `fadeOut` → `scene.restart({lvIdx: next})` 或 `showEndScreen()`
+**首次进关**: 主菜单 Start/Continue → `LoadingScene` → `LevelScene`
+**关卡间跳转**: `LevelScene.goNextLevel()` → `fadeOut` → `scene.restart({lvIdx: next})` 或 `showEndScreen()`；中途换关不会重新显示 `LoadingScene`，依赖上一关后台预热 + `LevelScene.preload()` 兜底
 **返回菜单**: Home 按钮 → `fadeOut` → `scene.start('MenuScene')`
 
 ---
@@ -199,6 +200,7 @@ STORY.levels[i] = {
 ## 10. 修改注意事项
 
 - 新资源必须经 `AssetHelper` 收集排队，背景图创建前调用 `textures.exists()` 安全检查
+- 不要随意重命名/移动 `js/Photo`、`js/Audio` 等资源目录；路径被 `story.js`、`BootScene`、`ProjectPage`、`index.html` 多处直接引用
 - 按钮 hover 标签纯 CSS，禁止重新引入 JS opacity 逻辑
 - `LoadingScene` 是关卡资源主入口，`LevelScene.preload` 仅兜底
 - 主菜单布局冻结（详见 Planning.md），仅允许改色/发光/字体

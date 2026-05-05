@@ -1018,23 +1018,6 @@ body {
     opacity: 0.55;
 }
 
-/* 自定义光标 */
-#project-overlay .pj-cursor {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 10px;
-    height: 10px;
-    margin: -5px 0 0 -5px;
-    border-radius: 50%;
-    background: var(--pj-accent);
-    box-shadow: 0 0 12px var(--pj-accent), 0 0 24px var(--pj-accent);
-    pointer-events: none;
-    z-index: 200;
-    mix-blend-mode: normal;
-    transition: background 0.4s;
-}
-
 /* 遮罩层（反色 Hero） */
 #project-overlay .pj-mask-container {
     position: fixed;
@@ -1055,6 +1038,11 @@ body {
 }
 
 /* Hero 区 */
+/* 该 wrapper 起点位于视口中心 (50vw, 50vh)，宽高 100% 会延伸到视口外的右下方，
+ * 其几何中心实际落在右下角 (100vw, 100vh)。若使用默认 perspective-origin: 50% 50%，
+ * 透视消失点就会跑到视口右下角，导致 30 层深度堆叠的 3D 文字朝右下方收敛，
+ * 看起来像字体本身被斜切。把 perspective-origin 锚到 wrapper 的 0% 0%（即视口正中心，
+ * 与 scene 中心重合）即可让消失点回正，文字正视图恢复。*/
 #project-overlay .pj-hero-wrap {
     position: absolute;
     top: 50vh;
@@ -1062,6 +1050,7 @@ body {
     width: 100%;
     height: 100%;
     perspective: 1200px;
+    perspective-origin: 0% 0%;
     pointer-events: none;
 }
 
@@ -1083,7 +1072,7 @@ body {
     display: grid;
     justify-items: center;
     font-family: 'Outfit', 'Noto Sans SC', sans-serif;
-    font-weight: 500;
+    font-weight: 900;
     font-size: clamp(2.5rem, 8vw, 6rem);
     letter-spacing: 0.02em;
     line-height: 1;
@@ -1163,6 +1152,12 @@ body {
     letter-spacing: 0.1em;
     color: var(--pj-text-mute);
     pointer-events: none;
+    animation: pjBreathe 3s ease-in-out infinite;
+}
+
+@keyframes pjBreathe {
+    0%, 100% { opacity: 0.35; }
+    50%      { opacity: 1; }
 }
 
 /* 顶部 Nav */
@@ -1501,6 +1496,19 @@ body {
     border: 1px solid var(--pj-card-border);
     font-family: 'Noto Sans SC', sans-serif;
     width: 100%;
+}
+
+/* 联系方式结尾文字 */
+#project-overlay .pj-contact-footer {
+    margin: -16px auto 0;
+    max-width: 720px;
+    text-align: center;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: clamp(0.875rem, 1.3vw, 1rem);
+    font-weight: 400;
+    line-height: 1.9;
+    letter-spacing: 0.04em;
+    color: var(--pj-text-mute);
 }
 
 #project-overlay .pj-wechat-hint-wrap {

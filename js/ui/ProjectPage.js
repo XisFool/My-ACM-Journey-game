@@ -4,23 +4,23 @@
 
 const PROJECTS_DATA = [
     {
-        title: '智能客服Agent平台',
-        tags: ['LLM', 'RAG', 'Agent', 'Spring Boot'],
-        desc: '基于大语言模型的多轮对话系统，支持工具调用、知识库实时检索与上下文记忆，日均处理对话10万+',
-        year: '2025',
+        title: 'My ACM Journey · 像素传记游戏',
+        tags: ['Phaser 3', 'HTML / CSS / JS', 'ES Modules', '像素美术'],
+        desc: '像素风 2D 横版传记游戏，记录我的 ACM/XCPC 竞赛之路。4 座城市关卡（南昌 → 深圳 → 桂林 → 重庆），玩家跳跃收集问号方块触发图文剧情弹窗。自研 AssetHelper 统一资源预热、LoadingScene 进度条、日夜主题切换与剧情图缓存复用。',
+        year: '2026',
         image: 'js/Photo/Projects/01.webp',
     },
     {
-        title: '自动化流程引擎',
-        tags: ['Workflow', 'Java', 'Microservices'],
-        desc: '可视化AI工作流编排系统，支持拖拽式流程设计、自动化任务调度与执行监控，提升业务效率60%',
-        year: '2025',
+        title: 'TravelGraph · 大学生旅行规划 Agent',
+        tags: ['LangGraph', 'RAG', 'HITL', 'Pydantic v2', 'Streamlit'],
+        desc: '基于 LangGraph 的多节点旅行 Agent：Chroma 语义检索稳定攻略 + 高德 / 和风 / Tavily 工具补全实时信息 + Critic 评分自我修订 + 人工 HITL 确认。面向大学生特种兵玩法，覆盖成都 / 杭州 / 西安 / 重庆 / 北京 5 城，Streamlit 前端完整可视化 Agent 执行过程。',
+        year: '2026',
         image: 'js/Photo/Projects/02.webp',
     },
     {
-        title: '个人3D简历空间',
-        tags: ['React', 'CSS 3D', 'Canvas'],
-        desc: '沉浸式个人交互主页，借助原生纯CSS3D属性和鼠标透视追踪实现新一代Web端视觉体验。',
+        title: 'Law-Bot · 法律法规智能问答',
+        tags: ['LangChain', 'Hybrid RAG', 'FastAPI + SSE', 'Next.js 14'],
+        desc: '覆盖《劳动法》《劳动合同法》《治安管理处罚法》的 RAG 问答助手。法条级切分 + Chroma MMR + BM25(jieba) + RRF 融合 + Qwen Rerank，答案强制标注法条编号并聚合引用卡片，低相关度自动走 Tavily 联网兜底，FastAPI SSE 流式输出。',
         year: '2026',
         image: 'js/Photo/Projects/03.webp',
     },
@@ -163,11 +163,6 @@ function buildBody(overlay) {
     `;
     overlay.appendChild(nav);
 
-    // Custom cursor dot
-    const cursor = document.createElement('div');
-    cursor.className = 'pj-cursor';
-    overlay.appendChild(cursor);
-
     // Sections wrapper (scrollable)
     const content = document.createElement('div');
     content.className = 'pj-content';
@@ -221,22 +216,23 @@ function buildBody(overlay) {
                 <p class="pj-contact-val">xisafoolcn@gmail.com</p>
                 <p class="pj-contact-hint">点击发送邮件</p>
             </a>
-            <a href="https://github.com/Asenlyf" target="_blank" rel="noopener noreferrer" class="pj-contact-card">
+            <a href="https://github.com/XisFool" target="_blank" rel="noopener noreferrer" class="pj-contact-card">
                 <div class="pj-contact-icon"><i class="fa-brands fa-github"></i></div>
                 <h3>GitHub</h3>
-                <p class="pj-contact-val">Asenlyf</p>
+                <p class="pj-contact-val">XisFool</p>
                 <p class="pj-contact-hint">点击访问主页</p>
             </a>
             <button class="pj-contact-card pj-contact-card--wechat" id="pj-wechat-btn">
                 <div class="pj-contact-icon"><i class="fa-brands fa-weixin"></i></div>
                 <h3>微信 / WeChat</h3>
-                <p class="pj-contact-val">SoberLeo2002</p>
+                <p class="pj-contact-val">Xisafool</p>
                 <div class="pj-wechat-hint-wrap">
                     <p class="pj-wechat-hint pj-wechat-hint--idle">点击复制微信号</p>
                     <p class="pj-wechat-hint pj-wechat-hint--done">已复制 !</p>
                 </div>
             </button>
         </div>
+        <p class="pj-contact-footer">感谢你看到这里。若你也热爱在代码与算法里寻找微光，欢迎随时来聊 —— 每一次真诚的对话，都可能是下一段故事的起点。</p>
     `;
     content.appendChild(contact);
 
@@ -252,7 +248,6 @@ function buildBody(overlay) {
         hero,
         projects,
         contact,
-        cursor,
         navButtons: nav.querySelectorAll('.pj-nav-btn'),
         cards: stack.querySelectorAll('.pj-card'),
         heroHover,
@@ -341,21 +336,16 @@ export function initProjectPage() {
     window.addEventListener('resize', canvasCtx.resize);
 
     // Mask + mouse lerp animation state
+    // 初始让 mouse 与 lerped 都停在视口中心，且不做 snap。
+    // 这样在用户移动鼠标前，3D 文字透视倾斜量恒为 0，不会出现初始歪斜。
     const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
     const lerped = { x: window.innerWidth / 2, y: window.innerHeight / 2, radius: 77, scale: 1 };
     let isHoveredHero = false;
-    let firstMove = true;
     let activeSection = 'about';
 
     const onMouseMove = (e) => {
-        if (firstMove) {
-            lerped.x = e.clientX;
-            lerped.y = e.clientY;
-            firstMove = false;
-        }
         mouse.x = e.clientX;
         mouse.y = e.clientY;
-        els.cursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
     };
     overlay.addEventListener('mousemove', onMouseMove);
     // Hero hover zone
@@ -380,6 +370,9 @@ export function initProjectPage() {
         }
     };
     overlay.addEventListener('scroll', onScroll, { passive: true });
+    // 每次打开都重置滚动到顶部，确保用户重新从 Hero 开始浏览
+    overlay.scrollTop = 0;
+    els.maskScroll.style.transform = 'translateY(0px)';
     // 初始高亮（初始 scrollTop=0 → activeSection='about'，但 onScroll 内有变化判断不会主动同步 DOM）
     els.navButtons.forEach((b) => {
         b.classList.toggle('is-active', b.dataset.target === activeSection);
@@ -417,7 +410,7 @@ export function initProjectPage() {
         document.body.removeChild(ta);
     };
     const onWechat = () => {
-        const text = 'SoberLeo2002';
+        const text = 'Xisafool';
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).then(showCopied, () => {
                 fallbackCopy(text);
