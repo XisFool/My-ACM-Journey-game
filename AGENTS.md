@@ -1,6 +1,12 @@
-# Agent.md — My ACM Journey
+# AGENTS.md — My ACM Journey
 
-> 供 AI Agent 快速理解项目全貌的严谨参考。最后更新：2026-05-04。
+> 面向 AI 编码 Agent 的项目上下文速查（README 之外的补充）。最后更新：2026-05-05。
+
+## 为什么有这个文件
+
+- `README.md` 面向人类贡献者：快速介绍、截图、故事化描述。
+- `AGENTS.md` 面向 Agent：构建步骤、目录语义、约定、边界，一次给全，避免翻源码猜测。
+- 两者分离，互不污染。
 
 ---
 
@@ -42,10 +48,11 @@ my-acm-journey/
 │       ├── Background/       # 4 城背景 + GameOver.webp
 │       ├── Qiu/              # 玩家精灵 Qiu_R/L.png + Head.jpg(Profile头像)
 │       ├── Other_character/  # Kirby.png (NPC 精灵图)
+│       ├── Projects/         # Project 面板 3D Intro 卡图 01-03.webp（用户提供）
 │       └── *_memo/           # 各关剧情图 A/B/C 系列 .webp
 ├── Planning.md               # Profile 面板设计文档
 ├── Progress.md               # 开发进度笔记（.gitignore 排除）
-└── Agent.md                  # 本文件
+└── AGENTS.md                 # 本文件（面向 AI Agent 的上下文速查）
 ```
 
 ---
@@ -112,6 +119,20 @@ BootScene  ──→  MenuScene  ──→  LoadingScene  ──→  LevelScene
 - key = `bgm:${path}`，`registry` 全局共享 `_bgmKey`/`_bgmObj`
 - 同首歌跨关不重启；换歌 stop→play；Home/通关 stopAll+清 registry
 
+### 4.7 Project 3D Intro 页 (ProjectPage.js)
+
+- 入口：主菜单 `#menu-project-btn` → 动态 `import('./js/ui/ProjectPage.js')` → `initProjectPage()`
+- 关闭：通过自定义事件 `pj:request-close` 触发 `destroyProjectPage()`（cancelAnimationFrame + removeEventListener + 清 card tilt）
+- 三段滚动：`#pj-about` Hero / `#pj-projects` 三卡 / `#pj-contact` 三卡（内部 overflow-y:auto 滚动，非 window）
+- 核心动效（常量与原 React 版一致）：
+  - Hero：30 层 `translateZ(-i*2px)` 堆叠文字 × 2（base + mask），lerp 系数 0.15，鼠标透视 ±35°
+  - 遮罩：`#project-mask-container` 用 `clip-path: circle(Rpx at Xpx Ypx)` 跟鼠标，Hero 段 R=77/100（hover），projects/contact 段 R=15
+  - 卡片：mousemove → `rotateX/rotateY` ±8°，scale 1.02
+  - Canvas 点阵：`--pj-grid-dot` 驱动颜色，resize 重绘
+  - 自定义光标：`cursor:none` 仅作用于 `#project-overlay`，发光小圆点跟鼠标
+- 主题：`--pj-*` 变量组跟随 `#project-overlay.night` 自动切换（白天橙 #fa520f / 夜晚青 #00f3ff）
+- **注意**：全局 `* { color:var(--th-text-primary) }` 会覆盖 `<i>` 子元素字色，需要给 `.pj-contact-icon i` 显式设色
+
 ---
 
 ## 5. story.js 数据结构
@@ -140,6 +161,7 @@ STORY.levels[i] = {
 | 1100 | `#end-screen` 通关画面 |
 | 1000 | `#memory-modal` 剧情弹窗 |
 | 800 | `.profile-overlay` Profile 面板 |
+| 600 | `#project-overlay` Project 3D Intro 页 |
 | 500 | `#menu-overlay` 主菜单遮罩 |
 | 400 | `.game-home-container` 游戏内 Home |
 

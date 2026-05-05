@@ -1083,13 +1083,12 @@ body {
     display: grid;
     justify-items: center;
     font-family: 'Outfit', 'Noto Sans SC', sans-serif;
-    font-weight: 900;
+    font-weight: 500;
     font-size: clamp(2.5rem, 8vw, 6rem);
     letter-spacing: 0.02em;
     line-height: 1;
     white-space: nowrap;
     user-select: none;
-    text-transform: uppercase;
     transform-style: preserve-3d;
 }
 
@@ -1103,8 +1102,13 @@ body {
 
 /* 正色版本 */
 #project-overlay .pj-3d-text--base .pj-3d-text-layer { color: #cbd5e1; }
-#project-overlay.night .pj-3d-text--base .pj-3d-text-layer { color: #1a2430; }
-#project-overlay .pj-3d-text--base .pj-3d-text-front { color: var(--pj-text-strong); }
+#project-overlay.night .pj-3d-text--base .pj-3d-text-layer { color: #2a3a4d; }
+#project-overlay .pj-3d-text--base .pj-3d-text-front {
+    color: var(--pj-text-strong);
+}
+#project-overlay.night .pj-3d-text--base .pj-3d-text-front {
+    text-shadow: 0 0 24px rgba(0, 243, 255, 0.35);
+}
 
 /* 反色版本（mask 内） */
 #project-overlay .pj-3d-text--mask .pj-3d-text-layer { color: var(--pj-mask-text-body); }
@@ -1293,21 +1297,6 @@ body {
     flex-direction: column;
     pointer-events: none;
     flex: 1;
-}
-
-#project-overlay .pj-card-num {
-    position: absolute;
-    top: -16px;
-    left: -8px;
-    font-family: 'Outfit', sans-serif;
-    font-weight: 900;
-    font-size: clamp(4rem, 10vw, 8rem);
-    color: var(--pj-text-faint);
-    opacity: 0.6;
-    letter-spacing: -0.05em;
-    line-height: 1;
-    pointer-events: none;
-    z-index: 0;
 }
 
 #project-overlay .pj-card-title {

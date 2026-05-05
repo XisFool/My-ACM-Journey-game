@@ -4,7 +4,6 @@
 
 const PROJECTS_DATA = [
     {
-        num: '01',
         title: '智能客服Agent平台',
         tags: ['LLM', 'RAG', 'Agent', 'Spring Boot'],
         desc: '基于大语言模型的多轮对话系统，支持工具调用、知识库实时检索与上下文记忆，日均处理对话10万+',
@@ -12,7 +11,6 @@ const PROJECTS_DATA = [
         image: 'js/Photo/Projects/01.webp',
     },
     {
-        num: '02',
         title: '自动化流程引擎',
         tags: ['Workflow', 'Java', 'Microservices'],
         desc: '可视化AI工作流编排系统，支持拖拽式流程设计、自动化任务调度与执行监控，提升业务效率60%',
@@ -20,7 +18,6 @@ const PROJECTS_DATA = [
         image: 'js/Photo/Projects/02.webp',
     },
     {
-        num: '03',
         title: '个人3D简历空间',
         tags: ['React', 'CSS 3D', 'Canvas'],
         desc: '沉浸式个人交互主页，借助原生纯CSS3D属性和鼠标透视追踪实现新一代Web端视觉体验。',
@@ -83,11 +80,6 @@ function buildProjectCard(p, idx) {
     content.className = 'pj-card-content';
     content.style.transform = 'translateZ(30px)';
     content.style.transformStyle = 'preserve-3d';
-
-    const num = document.createElement('div');
-    num.className = 'pj-card-num';
-    num.textContent = p.num;
-    content.appendChild(num);
 
     const h3 = document.createElement('h3');
     h3.className = 'pj-card-title';
@@ -388,6 +380,10 @@ export function initProjectPage() {
         }
     };
     overlay.addEventListener('scroll', onScroll, { passive: true });
+    // 初始高亮（初始 scrollTop=0 → activeSection='about'，但 onScroll 内有变化判断不会主动同步 DOM）
+    els.navButtons.forEach((b) => {
+        b.classList.toggle('is-active', b.dataset.target === activeSection);
+    });
     onScroll();
 
     // Nav clicks
