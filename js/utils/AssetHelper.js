@@ -3,6 +3,14 @@ import { STORY } from '../story.js';
 const preheatedLevels = new Set();
 const preloadedImageMap = new Map();
 
+export function getNpcAssetKey(lvIdx, npcKey) {
+    return `npc:${lvIdx}:${npcKey}`;
+}
+
+export function getNpcAnimKey(lvIdx, npcKey) {
+    return `npc:${lvIdx}:${npcKey}:idle`;
+}
+
 export function collectLevelAssets(lvIdx) {
     const levelData = STORY.levels[lvIdx];
     const assets = {
@@ -30,9 +38,11 @@ export function collectLevelAssets(lvIdx) {
     }
 
     (levelData.npcs || []).forEach((npc) => {
+        const key = getNpcAssetKey(lvIdx, npc.key);
+
         if (npc.frameWidth && npc.frameHeight) {
             assets.spritesheets.push({
-                key: npc.key,
+                key,
                 path: npc.image,
                 frameWidth: npc.frameWidth,
                 frameHeight: npc.frameHeight,
@@ -41,7 +51,7 @@ export function collectLevelAssets(lvIdx) {
         }
 
         assets.images.push({
-            key: npc.key,
+            key,
             path: npc.image,
         });
     });
@@ -93,6 +103,10 @@ export function preloadImage(src) {
 export function getPreloadedImage(src) {
     if (!src) return null;
     return preloadedImageMap.get(src) || null;
+}
+
+export function clearPreloadedImages() {
+    preloadedImageMap.clear();
 }
 
 export function preloadMemoryImages(levelData) {

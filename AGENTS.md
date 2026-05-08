@@ -1,6 +1,6 @@
 # AGENTS.md — My ACM Journey
 
-> 面向 AI 编码 Agent 的项目上下文速查。最后更新：2026-05-05。
+> 面向 AI 编码 Agent 的项目上下文速查。最后更新：2026-05-08。
 
 ## 为什么有这个文件
 
@@ -35,13 +35,13 @@ my-acm-journey/
 │   ├── scenes/
 │   │   ├── BootScene.js      # preload: player_r/l 精灵; create: 动画注册 + qblock/particle_snow 纹理生成
 │   │   ├── MenuScene.js      # 控制 #menu-overlay 显隐; 暴露 window._menuSceneRef; 处理 _pendingStart
-│   │   ├── LoadingScene.js   # AssetHelper 加载目标关资源; 进度条 + minDuration(900ms) 缓冲
+│   │   ├── LoadingScene.js   # AssetHelper 加载目标关资源; 进度条 + loaderror 记录 + 动态最小时长
 │   │   └── LevelScene.js     # 核心：背景/地面/玩家/方块/NPC/碰撞/HUD/BGM/粒子/预热/通关
 │   ├── ui/
 │   │   ├── MemoryModal.js    # 纯 DOM 弹窗控制器; 图片+文字翻页; 复用 AssetHelper 缓存
 │   │   └── ProjectPage.js    # 3D Intro 全屏页（Hero 30层景深/clip-path 反色遮罩/卡片倾斜/点阵）
 │   ├── utils/
-│   │   └── AssetHelper.js    # 资源收集/排队/预热状态/DOM 图片去重缓存
+│   │   └── AssetHelper.js    # 资源收集/排队/NPC key 命名空间/预热状态/DOM 图片缓存
 │   ├── libs/phaser.min.js    # Phaser 3.60 本地（CDN 备用）
 │   ├── Audio/                # MC.mp3(关1-3), wuxian_jinbu.mp3(关4)
 │   └── Photo/
@@ -63,7 +63,7 @@ my-acm-journey/
 BootScene  ──→  MenuScene  ──→  LoadingScene  ──→  LevelScene
   │                │                 │                  │
   │ 加载玩家精灵   │ 显示DOM菜单     │ 加载目标关资源    │ 游戏主循环
-  │ 生成纹理       │ 等待点击        │ 进度条+最小时长   │ 全收集→下一关或通关
+  │ 生成纹理       │ 等待点击        │ 进度条+动态最小时长│ 全收集→下一关或通关
   │                │                 │                  │ 1.5s后静默预热下一关
 ```
 
@@ -81,15 +81,23 @@ BootScene  ──→  MenuScene  ──→  LoadingScene  ──→  LevelScene
 |---|---|
 | `collectLevelAssets(lvIdx)` | 收集指定关的 images/audios/spritesheets |
 | `queueAssets(scene, assets)` | Phaser loader 排队，跳过已存在资源，返回排队数 |
+| `getNpcAssetKey(lvIdx, npcKey)` | 生成 NPC 纹理 key：`npc:{lvIdx}:{npcKey}` |
+| `getNpcAnimKey(lvIdx, npcKey)` | 生成 NPC 动画 key：`npc:{lvIdx}:{npcKey}:idle` |
 | `preloadImage(src)` | DOM `new Image()` 异步预热，写入 `preloadedImageMap` |
 | `getPreloadedImage(src)` | 从 Map 取缓存 Image 对象 |
+| `clearPreloadedImages()` | 清空 DOM 剧情图预热缓存；回菜单/通关时调用 |
 | `preloadMemoryImages(levelData)` | 批量预热某关所有 memoryBlock 图片 |
 | `isLevelPreheated` / `markLevelPreheated` | `preheatedLevels` Set 状态管理 |
 
 **加载时机**:
-1. **LoadingScene.preload()** — 当前关主加载（Phaser 层 bg/bgm/npc）
+1. **LoadingScene.preload()** — 当前关主加载（Phaser 层 bg/bgm/npc），监听 `FILE_LOAD_ERROR` 记录失败资源，最小时长按排队资源数动态取 260/520/900ms
 2. **LevelScene.preload()** — 轻量兜底（去重自动跳过）
 3. **LevelScene._preloadBackgroundAssets()** — 延迟 1.5s 静默预热：DOM 层本关+下一关 memory 图；Phaser 层下一关 bg/bgm/npc（手动 `load.start()`）
+
+**fallback 策略**:
+- 背景图：创建前检查 `textures.exists(bgKey)`，缺失时显示 `bgColor` + 渐变占位
+- BGM：播放前检查 `cache.audio.exists(musicKey)`，缺失时静默跳过并清 registry
+- NPC：创建前检查命名空间纹理 key，缺失时跳过该 NPC
 
 ### 4.2 日夜主题
 
@@ -112,18 +120,19 @@ BootScene  ──→  MenuScene  ──→  LoadingScene  ──→  LevelScene
 ### 4.5 NPC 系统
 
 - 数据在 `story.js levels[].npcs[]`；目前仅关卡 1 有 Kirby
+- Phaser 纹理 key 使用 `getNpcAssetKey(lvIdx, key)`；动画 key 使用 `getNpcAnimKey(lvIdx, key)`，避免跨关同名 NPC 冲突
 - 靠近 80px 显示 "!"，停留 `triggerTime` ms 后弹气泡对话框
 - 离开后重置，可重复触发
 
 ### 4.6 BGM
 
 - key = `bgm:${path}`，`registry` 全局共享 `_bgmKey`/`_bgmObj`
-- 同首歌跨关不重启；换歌 stop→play；Home/通关 stopAll+清 registry
+- 同首歌跨关不重启；换歌 stop→play；Home/通关 stopAll+清 registry；音频缺失时静默 fallback
 
 ### 4.7 Project 3D Intro 页 (ProjectPage.js)
 
 - 入口：主菜单 `#menu-project-btn` → 动态 `import('./js/ui/ProjectPage.js')` → `initProjectPage()`
-- 关闭：通过自定义事件 `pj:request-close` 触发 `destroyProjectPage()`（cancelAnimationFrame + removeEventListener + 清 card tilt）
+- 关闭：通过自定义事件 `pj:request-close` 触发 `destroyProjectPage()`（cancelAnimationFrame + 清理 close/mouse/hero/nav/card/resize/wechat 监听）
 - 三段滚动：`#pj-about` Hero / `#pj-projects` 三卡 / `#pj-contact` 三卡（内部 overflow-y:auto 滚动，非 window）
 - 核心动效（常量与原 React 版一致）：
   - Hero：30 层 `translateZ(-i*2px)` 堆叠文字 × 2（base + mask），lerp 系数 0.15，鼠标透视 ±35°
@@ -190,18 +199,16 @@ STORY.levels[i] = {
 
 ## 9. 已知待办
 
-- [ ] `loaderror` 错误处理与 fallback
-- [ ] NPC key 命名空间重构（避免跨关卡冲突）
-- [ ] 资源卸载/缓存回收策略
-- [ ] LoadingScene 最小时长动态化
+- [ ] Phaser 纹理/音频缓存回收策略（DOM 剧情图缓存已在回菜单/通关时轻量清理）
 
 ---
 
 ## 10. 修改注意事项
 
 - 新资源必须经 `AssetHelper` 收集排队，背景图创建前调用 `textures.exists()` 安全检查
+- 新 NPC 资源必须通过 `getNpcAssetKey` / `getNpcAnimKey` 使用关卡命名空间，不要直接使用 `npc.key` 作为 Phaser key
 - 不要随意重命名/移动 `js/Photo`、`js/Audio` 等资源目录；路径被 `story.js`、`BootScene`、`ProjectPage`、`index.html` 多处直接引用
 - 按钮 hover 标签纯 CSS，禁止重新引入 JS opacity 逻辑
-- `LoadingScene` 是关卡资源主入口，`LevelScene.preload` 仅兜底
+- `LoadingScene` 是关卡资源主入口，`LevelScene.preload` 仅兜底；加载失败应走已有 fallback，不应阻塞进关
 - 主菜单布局冻结（详见 Planning.md），仅允许改色/发光/字体
 - Phaser loader 在 `create()` 后需手动 `load.start()`

@@ -2,7 +2,7 @@
    LevelScene.js — 核心游戏场景
    ============================================ */
 import { STORY } from '../story.js';
-import { collectLevelAssets, isLevelPreheated, markLevelPreheated, preloadImage, preloadMemoryImages, queueAssets } from '../utils/AssetHelper.js';
+import { clearPreloadedImages, collectLevelAssets, getNpcAnimKey, getNpcAssetKey, isLevelPreheated, markLevelPreheated, preloadImage, preloadMemoryImages, queueAssets } from '../utils/AssetHelper.js';
 
 const CFG = {
     W: 960, H: 540,
@@ -48,19 +48,24 @@ export default class LevelScene extends Phaser.Scene {
         // 0. 背景音乐（同一首跨关卡共享进度，播完才循环）
         if (this.levelData.bgMusic) {
             const musicKey = `bgm:${this.levelData.bgMusic}`;
-            const curKey = this.registry.get('_bgmKey');
-            const curBgm = this.registry.get('_bgmObj');
+            if (this.cache.audio.exists(musicKey)) {
+                const curKey = this.registry.get('_bgmKey');
+                const curBgm = this.registry.get('_bgmObj');
 
-            if (curKey === musicKey && curBgm && curBgm.isPlaying) {
-                // 同一首歌仍在播放，不重启
-                this.bgm = curBgm;
+                if (curKey === musicKey && curBgm && curBgm.isPlaying) {
+                    // 同一首歌仍在播放，不重启
+                    this.bgm = curBgm;
+                } else {
+                    // 停掉旧的，播放新的
+                    if (curBgm) { try { curBgm.stop(); } catch (_) {} }
+                    this.bgm = this.sound.add(musicKey, { loop: true, volume: 0.5 });
+                    this.bgm.play();
+                    this.registry.set('_bgmKey', musicKey);
+                    this.registry.set('_bgmObj', this.bgm);
+                }
             } else {
-                // 停掉旧的，播放新的
-                if (curBgm) { try { curBgm.stop(); } catch (_) {} }
-                this.bgm = this.sound.add(musicKey, { loop: true, volume: 0.5 });
-                this.bgm.play();
-                this.registry.set('_bgmKey', musicKey);
-                this.registry.set('_bgmObj', this.bgm);
+                this.registry.set('_bgmKey', null);
+                this.registry.set('_bgmObj', null);
             }
         }
 
@@ -131,6 +136,11 @@ export default class LevelScene extends Phaser.Scene {
         this.npcs = [];
         const npcList = this.levelData.npcs || [];
         npcList.forEach(npcData => {
+            const npcAssetKey = getNpcAssetKey(this.lvIdx, npcData.key);
+            if (!this.textures.exists(npcAssetKey)) {
+                return;
+            }
+
             // 计算 NPC X 坐标：放在 afterBlock 和 afterBlock+1 之间
             const idx1 = npcData.afterBlock;
             const idx2 = idx1 + 1;
@@ -142,25 +152,29 @@ export default class LevelScene extends Phaser.Scene {
 
             // 如果是精灵图，创建动画并播放
             let sprite;
-            if (npcData.frameWidth) {
-                const animKey = `npc_${npcData.key}_idle`;
+            if (npcData.frameWidth && npcData.frameHeight) {
+                const animKey = getNpcAnimKey(this.lvIdx, npcData.key);
                 if (!this.anims.exists(animKey)) {
+                    const sourceImage = this.textures.get(npcAssetKey).getSourceImage();
                     const totalFrames = Math.floor(
-                        this.textures.get(npcData.key).getSourceImage().width / npcData.frameWidth
+                        sourceImage.width / npcData.frameWidth
                     );
+                    if (totalFrames <= 0) {
+                        return;
+                    }
                     this.anims.create({
                         key: animKey,
-                        frames: this.anims.generateFrameNumbers(npcData.key, { start: 0, end: totalFrames - 1 }),
+                        frames: this.anims.generateFrameNumbers(npcAssetKey, { start: 0, end: totalFrames - 1 }),
                         frameRate: npcData.frameRate || 10,
                         repeat: -1,
                     });
                 }
-                sprite = this.add.sprite(npcX, npcY, npcData.key)
+                sprite = this.add.sprite(npcX, npcY, npcAssetKey)
                     .setOrigin(0.5, 1)
                     .setDepth(5);
-                sprite.play(`npc_${npcData.key}_idle`);
+                sprite.play(animKey);
             } else {
-                sprite = this.add.image(npcX, npcY, npcData.key)
+                sprite = this.add.image(npcX, npcY, npcAssetKey)
                     .setOrigin(0.5, 1)
                     .setDepth(5);
             }
@@ -257,6 +271,7 @@ export default class LevelScene extends Phaser.Scene {
                 this.sound.stopAll();
                 this.registry.set('_bgmKey', null);
                 this.registry.set('_bgmObj', null);
+                clearPreloadedImages();
                 if (gameHomeContainer) gameHomeContainer.style.display = 'none';
                 this.cameras.main.fadeOut(400, 0, 0, 0);
                 this.cameras.main.once('camerafadeoutcomplete', () => {
@@ -406,6 +421,7 @@ export default class LevelScene extends Phaser.Scene {
             this.sound.stopAll();
             this.registry.set('_bgmKey', null);
             this.registry.set('_bgmObj', null);
+            clearPreloadedImages();
             const overlay = document.getElementById('menu-overlay');
             if (overlay) overlay.classList.remove('hidden');
             const gameHomeContainer = document.getElementById('game-home-container');

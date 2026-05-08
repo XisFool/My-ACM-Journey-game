@@ -73,7 +73,6 @@ export default class MenuScene extends Phaser.Scene {
             this.scene.start('LoadingScene', {
                 nextScene: 'LevelScene',
                 nextData: { lvIdx },
-                minDuration: 900,
             });
         });
     }

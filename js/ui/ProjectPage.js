@@ -121,17 +121,13 @@ function buildProjectCard(p, idx) {
 }
 
 function buildBody(overlay) {
-    // Remove old placeholder contents (except close button)
-    const closeBtn = overlay.querySelector('#project-close-btn');
+    // Remove old contents before rebuilding Project page
     overlay.innerHTML = '';
-    if (closeBtn) overlay.appendChild(closeBtn);
-    else {
-        const btn = document.createElement('button');
-        btn.className = 'project-close';
-        btn.id = 'project-close-btn';
-        btn.innerHTML = '&times;';
-        overlay.appendChild(btn);
-    }
+    const btn = document.createElement('button');
+    btn.className = 'project-close';
+    btn.id = 'project-close-btn';
+    btn.innerHTML = '&times;';
+    overlay.appendChild(btn);
 
     // Canvas background
     const canvas = document.createElement('canvas');
@@ -240,6 +236,7 @@ function buildBody(overlay) {
 
     return {
         canvas,
+        closeBtn: overlay.querySelector('#project-close-btn'),
         maskContainer,
         maskScroll,
         baseScene,
@@ -321,13 +318,12 @@ export function initProjectPage() {
     const els = buildBody(overlay);
 
     // Re-wire close button (it was recreated)
-    const closeBtn = overlay.querySelector('#project-close-btn');
+    const closeBtn = els.closeBtn;
+    const onClose = () => {
+        overlay.dispatchEvent(new CustomEvent('pj:request-close'));
+    };
     if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            // Delegate to existing global close flow defined in index.html script.
-            // Dispatch a custom event so inline script can react.
-            overlay.dispatchEvent(new CustomEvent('pj:request-close'));
-        });
+        closeBtn.addEventListener('click', onClose);
     }
 
     // Canvas
@@ -349,8 +345,10 @@ export function initProjectPage() {
     };
     overlay.addEventListener('mousemove', onMouseMove);
     // Hero hover zone
-    els.heroHover.addEventListener('mouseenter', () => { isHoveredHero = true; });
-    els.heroHover.addEventListener('mouseleave', () => { isHoveredHero = false; });
+    const onHeroEnter = () => { isHoveredHero = true; };
+    const onHeroLeave = () => { isHoveredHero = false; };
+    els.heroHover.addEventListener('mouseenter', onHeroEnter);
+    els.heroHover.addEventListener('mouseleave', onHeroLeave);
 
     // Scroll sync for mask (overlay is the scroll container)
     const onScroll = () => {
@@ -380,13 +378,16 @@ export function initProjectPage() {
     onScroll();
 
     // Nav clicks
+    const navCleanups = [];
     els.navButtons.forEach((btn) => {
-        btn.addEventListener('click', () => {
+        const onNavClick = () => {
             const target = btn.dataset.target;
             const map = { about: els.hero, projects: els.projects, contact: els.contact };
             const el = map[target];
             if (el) overlay.scrollTo({ top: el.offsetTop, behavior: 'smooth' });
-        });
+        };
+        btn.addEventListener('click', onNavClick);
+        navCleanups.push(() => btn.removeEventListener('click', onNavClick));
     });
 
     // Card tilt
@@ -465,8 +466,12 @@ export function initProjectPage() {
         els,
         frameId,
         cardCleanups,
+        navCleanups,
         handlers: {
+            onClose,
             onMouseMove,
+            onHeroEnter,
+            onHeroLeave,
             onScroll,
             resize: canvasCtx.resize,
             onWechat,
@@ -476,12 +481,16 @@ export function initProjectPage() {
 
 export function destroyProjectPage() {
     if (!state) return;
-    const { overlay, els, frameId, cardCleanups, handlers } = state;
+    const { overlay, els, frameId, cardCleanups, navCleanups, handlers } = state;
     cancelAnimationFrame(frameId);
+    if (els.closeBtn) els.closeBtn.removeEventListener('click', handlers.onClose);
     overlay.removeEventListener('mousemove', handlers.onMouseMove);
+    els.heroHover.removeEventListener('mouseenter', handlers.onHeroEnter);
+    els.heroHover.removeEventListener('mouseleave', handlers.onHeroLeave);
     overlay.removeEventListener('scroll', handlers.onScroll);
     window.removeEventListener('resize', handlers.resize);
     cardCleanups.forEach((fn) => fn());
+    navCleanups.forEach((fn) => fn());
     els.wechatBtn.removeEventListener('click', handlers.onWechat);
     state = null;
 }

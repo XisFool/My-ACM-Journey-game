@@ -9,12 +9,14 @@ export default class LoadingScene extends Phaser.Scene {
         super({ key: 'LoadingScene' });
     }
 
-    init(data) {
+    init(data = {}) {
         this.nextScene = data.nextScene || 'LevelScene';
         this.nextData = data.nextData || { lvIdx: 0 };
-        this.minDuration = data.minDuration || 900;
+        this.requestedMinDuration = Number.isFinite(data.minDuration) ? data.minDuration : null;
         this.isLoaded = false;
         this.isTimeUp = false;
+        this.failedFiles = [];
+        this._loadHandlers = null;
     }
 
     preload() {
@@ -49,18 +51,23 @@ export default class LoadingScene extends Phaser.Scene {
         this.add.rectangle(cx, barY, barWidth, barHeight, 0x001e32, 1);
         const progress = this.add.rectangle(barX, barY, 0, barHeight, 0x00f3ff, 1).setOrigin(0, 0.5);
 
-        // --- 最小时间缓冲，防止一闪而过 ---
-        this.time.delayedCall(this.minDuration, () => {
-            this.isTimeUp = true;
-            this.checkAndGo();
-        });
-
         // --- 真实加载进度事件 ---
-        this.load.on('progress', (value) => {
+        const handleProgress = (value) => {
             progress.width = barWidth * value;
-        });
+        };
+
+        const handleLoadError = (file) => {
+            const fileId = file && (file.key || file.src || file.url || file.type);
+            this.failedFiles.push(fileId || 'unknown');
+            tip.setText('fallback mode enabled');
+            console.warn('Asset load failed:', fileId || file);
+        };
+        this._loadHandlers = { handleProgress, handleLoadError };
         
-        this.load.on('complete', () => {
+        this.load.on('progress', handleProgress);
+        this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, handleLoadError);
+        this.load.once('complete', () => {
+            this._clearLoadHandlers();
             progress.width = barWidth; // 确保填满
             this.isLoaded = true;
             this.checkAndGo();
@@ -68,12 +75,19 @@ export default class LoadingScene extends Phaser.Scene {
 
         // --- 按需加载目标关卡资源 ---
         const assets = collectLevelAssets(this.nextData.lvIdx);
-        queueAssets(this, assets);
+        const queued = queueAssets(this, assets);
+
+        // --- 最小时间缓冲，防止一闪而过 ---
+        this.time.delayedCall(this._resolveMinDuration(queued), () => {
+            this.isTimeUp = true;
+            this.checkAndGo();
+        });
     }
 
     create() {
         // 如果资源非常少瞬间加载完，可能 load 甚至没触发 progress 和 complete，主动标记
         if (this.load.totalToLoad === 0) {
+            this._clearLoadHandlers();
             this.isLoaded = true;
             this.checkAndGo();
         }
@@ -84,5 +98,21 @@ export default class LoadingScene extends Phaser.Scene {
             // 跳转到真正关卡
             this.scene.start(this.nextScene, this.nextData);
         }
+    }
+
+    _resolveMinDuration(queued) {
+        if (Number.isFinite(this.requestedMinDuration)) {
+            return this.requestedMinDuration;
+        }
+        if (queued <= 0) return 260;
+        if (queued <= 2) return 520;
+        return 900;
+    }
+
+    _clearLoadHandlers() {
+        if (!this._loadHandlers) return;
+        this.load.off('progress', this._loadHandlers.handleProgress);
+        this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, this._loadHandlers.handleLoadError);
+        this._loadHandlers = null;
     }
 }
