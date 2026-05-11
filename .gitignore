@@ -4,6 +4,9 @@
 # 个人开发进度笔记
 Progress.md
 
+# 历史设计文档（已实现完成，不随仓库提供）
+Planning.md
+
 # Playwright MCP 测试产物
 .playwright-mcp/
 
