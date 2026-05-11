@@ -1,12 +1,12 @@
 # AGENTS.md — My ACM Journey
 
-> 面向 AI 编码 Agent 的项目上下文速查。最后更新：2026-05-08。
+> 面向 AI 编码 Agent 的项目上下文速查。最后更新：2026-05-11。
 
 ## 为什么有这个文件
 
-- 当前仓库暂未提供 `README.md`；若后续新增，可面向人类贡献者放快速介绍、截图、故事化描述。
+- `README.md` 面向人类贡献者：项目简介、运行方式、加新面板的标准流程。
 - `AGENTS.md` 面向 Agent：构建步骤、目录语义、约定、边界，一次给全，避免翻源码猜测。
-- 若同时存在 `README.md` 与 `AGENTS.md`，两者应分离，互不污染。
+- 两者分离，互不污染；新协作者请先读 `README.md`，深入修改前再读本文件。
 
 ---
 
@@ -26,8 +26,15 @@
 
 ```
 my-acm-journey/
-├── index.html                # 入口；DOM 主菜单遮罩、Profile 面板、主题切换、按钮绑定
-├── style.css                 # 全局样式；日夜双套 CSS 变量 --th-*(主UI) / --da-*(Profile)
+├── index.html                # DOM 骨架 + script 入口（86 行；不含业务 JS）
+├── style.css                 # @import 聚合入口（仅 import 各模块）
+├── styles/
+│   ├── base.css              # 全局 reset + 主题 Token (--th-*)
+│   ├── menu.css              # 主菜单 #menu-overlay 与按钮（home/profile/project/theme-toggle）
+│   ├── profile.css           # Profile 面板 (--da-* + .profile-overlay)
+│   ├── project.css           # Project 3D Intro 全屏页 (--pj-* + 全部 #project-overlay)
+│   └── game.css              # 游戏内 Home / Phaser canvas / MemoryModal / EndScreen / 滚动条
+├── README.md                 # 面向人类贡献者（运行 / 目录 / 加面板流程 / 约定）
 ├── js/
 │   ├── main.js               # Phaser.Game 初始化，注册 4 场景
 │   ├── config.js             # CANVAS_WIDTH=960, CANVAS_HEIGHT=540
@@ -38,8 +45,11 @@ my-acm-journey/
 │   │   ├── LoadingScene.js   # AssetHelper 加载目标关资源; 进度条 + loaderror 记录 + 动态最小时长
 │   │   └── LevelScene.js     # 核心：背景/地面/玩家/方块/NPC/碰撞/HUD/BGM/粒子/预热/通关
 │   ├── ui/
-│   │   ├── MemoryModal.js    # 纯 DOM 弹窗控制器; 图片+文字翻页; 复用 AssetHelper 缓存
-│   │   └── ProjectPage.js    # 3D Intro 全屏页（Hero 30层景深/clip-path 反色遮罩/卡片倾斜/点阵）
+│   │   ├── MenuController.js # 主菜单交互总入口（主题/面板/proximity/Press Start）— index.html 唯一业务脚本
+│   │   ├── PanelManager.js   # 通用 createPanel 抽象（hidden/closing/animationend/onOpen/onClose）
+│   │   ├── ProfilePanel.js   # Profile 面板数据 + 动态 DOM 渲染（替代原 index.html 静态 DOM）
+│   │   ├── ProjectPage.js    # 3D Intro 全屏页（Hero 30层景深/clip-path 反色遮罩/卡片倾斜/点阵）
+│   │   └── MemoryModal.js    # 纯 DOM 弹窗控制器; 图片+文字翻页; 复用 AssetHelper 缓存
 │   ├── utils/
 │   │   └── AssetHelper.js    # 资源收集/排队/NPC key 命名空间/预热状态/DOM 图片缓存
 │   ├── libs/phaser.min.js    # Phaser 3.60 本地（CDN 备用）
@@ -50,8 +60,7 @@ my-acm-journey/
 │       ├── Other_character/  # Kirby.png (NPC 精灵图)
 │       ├── Projects/         # Project 面板 3D Intro 卡图 01-03.webp（用户提供）
 │       └── *_memo/           # 各关剧情图 A/B/C 系列 .webp
-├── Planning.md               # Profile 面板设计文档
-├── Progress.md               # 本地开发进度笔记（.gitignore 排除，不一定随仓库提供）
+├── Progress.md               # 本地开发进度笔记（.gitignore 排除，不随仓库提供）
 └── AGENTS.md                 # 本文件（面向 AI Agent 的上下文速查）
 ```
 
@@ -101,9 +110,10 @@ BootScene  ──→  MenuScene  ──→  LoadingScene  ──→  LevelScene
 
 ### 4.2 日夜主题
 
-- 白天默认 `:root`，夜晚 `#menu-overlay[data-theme="night"]` + `.profile-overlay.night`
+- 白天默认 `:root`，夜晚 `#menu-overlay[data-theme="night"]` + `.profile-overlay.night` + `#project-overlay.night`
 - `localStorage('acm-theme')` 持久化
-- `index.html` 内联 IIFE 处理切换逻辑
+- 切换逻辑由 `js/ui/MenuController.js → initThemeToggle()` 处理（原 index.html inline IIFE 已迁出）
+- 三套变量：`--th-*`（主菜单 / 通用 UI）、`--da-*`（Profile）、`--pj-*`（Project 3D 页）
 
 ### 4.3 剧情弹窗 (MemoryModal.js)
 
@@ -131,8 +141,8 @@ BootScene  ──→  MenuScene  ──→  LoadingScene  ──→  LevelScene
 
 ### 4.7 Project 3D Intro 页 (ProjectPage.js)
 
-- 入口：主菜单 `#menu-project-btn` → 动态 `import('./js/ui/ProjectPage.js')` → `initProjectPage()`
-- 关闭：通过自定义事件 `pj:request-close` 触发 `destroyProjectPage()`（cancelAnimationFrame + 清理 close/mouse/hero/nav/card/resize/wechat 监听）
+- 入口：主菜单 `#menu-project-btn` → MenuController `initProjectPanel()` → 动态 `import('./ProjectPage.js')` → `initProjectPage()`
+- 关闭：通过自定义事件 `pj:request-close` 或 `#project-close-btn` 触发 `destroyProjectPage()`（cancelAnimationFrame + 清理 close/mouse/hero/nav/card/resize/wechat 监听）
 - 三段滚动：`#pj-about` Hero / `#pj-projects` 三卡 / `#pj-contact` 三卡（内部 overflow-y:auto 滚动，非 window）
 - 核心动效（常量与原 React 版一致）：
   - Hero：30 层 `translateZ(-i*2px)` 堆叠文字 × 2（base + mask），lerp 系数 0.15，鼠标透视 ±35°
@@ -197,18 +207,32 @@ STORY.levels[i] = {
 
 ---
 
-## 9. 已知待办
+## 9. 加新按钮 / 面板的标准流程
 
-- [ ] Phaser 纹理/音频缓存回收策略（DOM 剧情图缓存已在回菜单/通关时轻量清理）
+详见 `README.md`「如何加新按钮 / 面板」。简版 4 步：
+
+1. **DOM**：`index.html` 加按钮 + 空 overlay 容器 `<div id="xxx-overlay" class="hidden"></div>`
+2. **样式**：`styles/xxx.css` 新文件，`style.css` 末尾追加 `@import url('styles/xxx.css');`
+3. **内容模块**：`js/ui/XxxPanel.js` 导出 `mountXxx(overlayEl)`，参考 `ProfilePanel.js` 的「数据 + 模板字面量」模式
+4. **接入**：在 `MenuController.js` 加 `initXxxPanel()`，调用 `createPanel({ overlayEl, openBtn, closeBtn, onOpen, onClose })`，并在文件底部 `init...()` 序列里调一次
 
 ---
 
-## 10. 修改注意事项
+## 10. 已知待办
 
-- 新资源必须经 `AssetHelper` 收集排队，背景图创建前调用 `textures.exists()` 安全检查
-- 新 NPC 资源必须通过 `getNpcAssetKey` / `getNpcAnimKey` 使用关卡命名空间，不要直接使用 `npc.key` 作为 Phaser key
-- 不要随意重命名/移动 `js/Photo`、`js/Audio` 等资源目录；路径被 `story.js`、`BootScene`、`ProjectPage`、`index.html` 多处直接引用
-- 按钮 hover 标签纯 CSS，禁止重新引入 JS opacity 逻辑
-- `LoadingScene` 是关卡资源主入口，`LevelScene.preload` 仅兜底；加载失败应走已有 fallback，不应阻塞进关
-- 主菜单布局冻结（详见 Planning.md），仅允许改色/发光/字体
-- Phaser loader 在 `create()` 后需手动 `load.start()`
+- [ ] Phaser 纹理/音频缓存回收策略（DOM 剧情图缓存已在回菜单/通关时轻量清理）
+- [ ] 可选：拆分 `LevelScene.js` 中 BGM / NPC / DOM Home 逻辑，降低单文件维护成本
+
+---
+
+## 11. 修改注意事项
+
+- **资源加载**：新资源必须经 `AssetHelper` 收集排队，背景图创建前调用 `textures.exists()` 安全检查
+- **NPC 资源**：必须通过 `getNpcAssetKey` / `getNpcAnimKey` 使用关卡命名空间，不要直接使用 `npc.key` 作为 Phaser key
+- **资源路径**：不要随意重命名/移动 `js/Photo`、`js/Audio` 等目录；路径被 `story.js`、`BootScene`、`ProjectPage` 多处直接引用
+- **按钮 hover 标签**：纯 CSS，禁止重新引入 JS opacity 逻辑
+- **LoadingScene**：是关卡资源主入口，`LevelScene.preload` 仅兜底；加载失败应走已有 fallback，不应阻塞进关
+- **主菜单布局**：冻结（字号 / 间距 / 按钮尺寸），仅允许改色/发光/字体
+- **CSS 拆分**：新增样式按职责放对应 `styles/*.css`；不要往 `style.css` 入口里塞规则（仅放 `@import`）
+- **index.html 瘦身**：禁止再往 `index.html` 加 inline `<script>` 业务逻辑；交互逻辑都进 `js/ui/MenuController.js` 或独立 ui 模块
+- **Phaser loader**：在 `create()` 后需手动 `load.start()`

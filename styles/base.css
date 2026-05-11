@@ -1,0 +1,60 @@
+/* ============================================
+   全局样式 + 主题 Token (--th-*)
+   ============================================ */
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    font-family: 'Orbitron', sans-serif;
+    color: var(--th-text-primary, #00f3ff);
+    outline: none;
+}
+
+body {
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--th-bg, #000000);
+}
+
+/* ---- 日夜模式 Token ---- */
+:root {
+    --th-bg: #ffffff;
+    --th-overlay-bg: #ffffff;
+    --th-container-bg: rgba(255, 240, 220, 0.25);
+    --th-container-border: rgba(250, 82, 15, 0.4);
+    --th-container-shadow: inset 0 0 20px rgba(250, 82, 15, 0.12);
+    --th-accent: #fa520f;
+    --th-accent-80: rgba(250, 82, 15, 0.8);
+    --th-accent-glow-sm: 0 0 15px rgba(250, 82, 15, 0.7);
+    --th-accent-glow-lg: 0 0 30px #fa520f, 0 0 60px #fa520f;
+    --th-text-primary: #1a0800;
+    --th-btn-fill-bg: #fa520f;
+    --th-btn-fill-text: #ffffff;
+    --th-btn-fill-hover: #ff7a45;
+    --th-scrollbar: rgba(250, 82, 15, 0.3);
+    --th-breathe-lo: rgba(250, 82, 15, 0.2);
+    --th-breathe-hi: rgba(250, 82, 15, 0.9);
+}
+
+#menu-overlay[data-theme="night"] {
+    --th-bg: #000000;
+    --th-overlay-bg: #000000;
+    --th-container-bg: rgba(0, 30, 50, 0.2);
+    --th-container-border: rgba(0, 243, 255, 0.3);
+    --th-container-shadow: inset 0 0 20px rgba(0, 243, 255, 0.15);
+    --th-accent: #00f3ff;
+    --th-accent-80: rgba(0, 243, 255, 0.8);
+    --th-accent-glow-sm: 0 0 15px rgba(0, 243, 255, 0.7);
+    --th-accent-glow-lg: 0 0 30px #00f3ff, 0 0 60px #00f3ff;
+    --th-text-primary: #00f3ff;
+    --th-btn-fill-bg: #00f3ff;
+    --th-btn-fill-text: #050a0f;
+    --th-btn-fill-hover: #ffffff;
+    --th-scrollbar: rgba(0, 243, 255, 0.3);
+    --th-breathe-lo: rgba(0, 243, 255, 0.2);
+    --th-breathe-hi: rgba(0, 243, 255, 0.9);
+}

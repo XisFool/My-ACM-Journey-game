@@ -1,0 +1,336 @@
+/* ============================================
+   HTML 主菜单遮罩层
+   ============================================ */
+#menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 500;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--th-overlay-bg);
+    transition: opacity 0.4s ease;
+}
+
+#menu-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.glass-container {
+    background-color: var(--th-container-bg);
+    height: 82.8vh;
+    width: 82.8%;
+    border: 1px solid transparent;
+    box-shadow: var(--th-container-shadow);
+    border-radius: 30px;
+    backdrop-filter: blur(15px);
+    padding: 50px;
+    padding-top: 10%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+/* 用 ::before 绘制边框，用 clip-path 精准裁切掉底部中间的线条（不会有颜色突兀） */
+.glass-container::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: -1px; right: -1px; bottom: -1px;
+    border: 1px solid var(--th-container-border);
+    border-radius: 30px;
+    pointer-events: none;
+    clip-path: polygon(
+        0% 0%, 
+        100% 0%, 
+        100% 100%, 
+        calc(50% + 105px) 100%, 
+        calc(50% + 105px) calc(100% - 5px), 
+        calc(50% - 105px) calc(100% - 5px), 
+        calc(50% - 105px) 100%, 
+        0% 100%
+    );
+}
+
+.content-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+/* 级联入场动画 */
+@keyframes slideDownFade {
+    0% {
+        opacity: 0;
+        transform: translateY(-40px);
+        text-shadow: 0 0 0 transparent;
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+        text-shadow: var(--th-accent-glow-sm);
+    }
+}
+
+.main-text {
+    font-size: 3.99rem;
+    text-transform: uppercase;
+    font-weight: 900;
+    letter-spacing: 4px;
+    margin-bottom: 20px;
+    text-align: center;
+    opacity: 0;
+    animation: slideDownFade 0.8s ease forwards;
+    animation-delay: 0.2s;
+}
+
+.sub-text {
+    font-size: 1.20rem;
+    letter-spacing: 5px;
+    font-weight: 400;
+    color: var(--th-accent-80);
+    margin-bottom: 60px;
+    text-align: center;
+    text-transform: uppercase;
+    opacity: 0;
+    animation: slideDownFade 0.8s ease forwards;
+    animation-delay: 0.6s;
+}
+
+.hero-cta {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    opacity: 0;
+    animation: slideDownFade 0.8s ease forwards;
+    animation-delay: 1.0s;
+}
+
+.hero-cta-btn {
+    font-size: 0.96rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
+    padding: 12px 40px;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+    border-radius: 4px;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.btn-left {
+    background-color: var(--th-btn-fill-bg);
+    color: var(--th-btn-fill-text);
+}
+
+.btn-right {
+    background-color: transparent;
+    border: 2px solid var(--th-accent);
+    color: var(--th-accent);
+}
+
+.btn-left:hover {
+    box-shadow: var(--th-accent-glow-lg);
+    background-color: var(--th-btn-fill-hover);
+}
+
+.btn-right:hover {
+    background-color: rgba(0, 243, 255, 0.1);
+    color: var(--th-btn-fill-hover);
+    box-shadow: 0 0 30px var(--th-accent);
+}
+
+/* 呼吸文字 */
+@keyframes breathe {
+
+    0%,
+    100% {
+        opacity: 0.2;
+        text-shadow: 0 0 2px var(--th-breathe-lo);
+    }
+
+    50% {
+        opacity: 1;
+        text-shadow: 0 0 15px var(--th-breathe-hi);
+    }
+}
+
+.explore-container {
+    position: absolute;
+    bottom: 15%;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    opacity: 0;
+    animation: slideDownFade 0.8s ease forwards;
+    animation-delay: 1.4s;
+}
+
+.explore-text {
+    font-size: 0.85rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--th-accent);
+    text-align: center;
+    animation: breathe 3s ease-in-out infinite;
+    animation-delay: 2.2s;
+}
+
+/* Home & Profile 按钮 — 嵌入玻璃底边线 */
+.home-container {
+    position: absolute;
+    bottom: 8.6vh;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    transform: translateY(50%);
+    z-index: 20;
+}
+
+
+.home-wrapper {
+    opacity: 0;
+    animation: slideDownFade 0.8s ease forwards;
+    animation-delay: 1.8s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    /* 按钮独立上移（修改这里调整高度，不影响线段） */
+    margin-bottom: 24px;
+}
+
+/* 按钮上方悬浮标签 */
+.btn-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #e0e0e0;
+    background: rgba(20, 20, 40, 0.85);
+    padding: 3px 10px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.home-wrapper:hover .btn-label {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* profile 图标跟随主题色 */
+.profile-btn i, .project-btn i {
+    color: var(--th-text-primary) !important;
+}
+
+.home-btn {
+    --prox: 1;
+    height: 27.8px;
+    width: 27.8px;
+    font-size: 0.79rem;
+    border: 2px solid grey;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.3s ease, border-color 0.4s ease, box-shadow 0.4s ease, color 0.4s ease;
+    transform: scale(var(--prox));
+    background: transparent;
+    color: grey;
+    text-decoration: none;
+}
+
+/* 初始界面 Home 放大 50%（仅菜单） */
+.home-container .home-btn {
+    height: 36px;
+    width: 36px;
+    font-size: 1.02rem;
+}
+
+.home-btn:hover {
+    border-color: var(--th-accent);
+    box-shadow: 0 0 25px var(--th-accent);
+    text-shadow: 0 0 25px var(--th-accent);
+    transform: scale(var(--prox)) rotate(360deg);
+    color: var(--th-accent);
+}
+
+/* 橙色 Profile / Project 按钮 */
+.profile-btn, .project-btn {
+    --prox: 1;
+    height: 36px;
+    width: 36px;
+    font-size: 1.02rem;
+    border: 2px solid grey;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.3s ease, border-color 0.4s ease, box-shadow 0.4s ease, color 0.4s ease;
+    transform: scale(var(--prox));
+    background: transparent;
+    color: var(--th-text-primary);
+    text-decoration: none;
+}
+
+.profile-btn:hover, .project-btn:hover {
+    border-color: grey;
+    transform: scale(var(--prox)) rotate(360deg);
+    color: var(--th-accent);
+}
+
+/* 鼠标靠近按钮放大效果 */
+.home-container .home-wrapper {
+    transition: transform 0.3s ease;
+}
+
+/* 日夜切换按钮 */
+#theme-toggle {
+    position: absolute;
+    top: 18px;
+    right: 22px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid grey;
+    background: transparent;
+    color: var(--th-accent);
+    font-size: 1.02rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.4s ease;
+    z-index: 2;
+}
+
+#theme-toggle:hover {
+    border-color: var(--th-accent);
+    box-shadow: 0 0 25px var(--th-accent);
+    color: var(--th-accent);
+    transform: rotate(360deg);
+}
+
+#theme-toggle i {
+    color: var(--th-accent);
+    transition: color 0.4s ease;
+}
