@@ -1,6 +1,6 @@
 # AGENTS.md — My ACM Journey
 
-> 面向 AI 编码 Agent 的项目上下文速查。最后更新：2026-05-11。
+> 面向 AI 编码 Agent 的项目上下文速查。最后更新：2026-05-17。
 
 ## 为什么有这个文件
 
@@ -19,6 +19,15 @@
 - **技术栈**: Phaser 3.60 + 原生 HTML/CSS/JS (ES Modules)，无构建步骤
 - **运行**: `python -m http.server`（纯静态托管）
 - **画布**: 960×540，Arcade 物理，`Phaser.Scale.ENVELOP` 自适应
+
+### Commands
+
+| 操作 | 命令 |
+|------|------|
+| Dev | `python -m http.server 8080`，浏览器打开 `http://localhost:8080` |
+| Build | 无（纯静态，无构建步骤） |
+| Lint | 无 |
+| Test | Playwright 手动走查（见 §12） |
 
 ---
 
@@ -225,14 +234,41 @@ STORY.levels[i] = {
 
 ---
 
-## 11. 修改注意事项
+## 11. Code Conventions
 
-- **资源加载**：新资源必须经 `AssetHelper` 收集排队，背景图创建前调用 `textures.exists()` 安全检查
-- **NPC 资源**：必须通过 `getNpcAssetKey` / `getNpcAnimKey` 使用关卡命名空间，不要直接使用 `npc.key` 作为 Phaser key
-- **资源路径**：不要随意重命名/移动 `js/Photo`、`js/Audio` 等目录；路径被 `story.js`、`BootScene`、`ProjectPage` 多处直接引用
-- **按钮 hover 标签**：纯 CSS，禁止重新引入 JS opacity 逻辑
-- **LoadingScene**：是关卡资源主入口，`LevelScene.preload` 仅兜底；加载失败应走已有 fallback，不应阻塞进关
-- **主菜单布局**：冻结（字号 / 间距 / 按钮尺寸），仅允许改色/发光/字体
-- **CSS 拆分**：新增样式按职责放对应 `styles/*.css`；不要往 `style.css` 入口里塞规则（仅放 `@import`）
-- **index.html 瘦身**：禁止再往 `index.html` 加 inline `<script>` 业务逻辑；交互逻辑都进 `js/ui/MenuController.js` 或独立 ui 模块
-- **Phaser loader**：在 `create()` 后需手动 `load.start()`
+- **语言**: 原生 JavaScript ES Modules（`import`/`export`），无 TypeScript
+- **命名**: 文件名 PascalCase（`LevelScene.js`），函数/变量 camelCase，CSS 变量 `--前缀-kebab`（`--th-*`、`--da-*`、`--pj-*`）
+- **导入**: `import` 语句必须位于文件顶部；禁止文件中部静态 import（动态 `import()` 懒加载除外）
+- **错误处理**: Phaser 资源加载失败走静默 fallback（不阻塞），不吞错误但允许降级
+- **风格**: 匹配现有代码风格，不擅自统一格式；不主动增删注释
+
+---
+
+## 12. Testing
+
+- **自动化框架**: 无（项目体量小，未引入）
+- **验证方式**: Playwright 手动端到端走查
+- **覆盖路径**: 菜单 → 主题切换 → Profile 开关 → Project 开关 → Press Start 进 LevelScene → 方块收集 → 弹窗翻页 → 通关 → 回菜单
+- **规则**: 涉及场景流程或 DOM 交互的改动，须走一遍完整走查路径
+
+---
+
+## 13. Boundaries
+
+**Always Do**
+- 新资源经 `AssetHelper` 收集排队，背景图创建前 `textures.exists()` 检查
+- NPC 资源通过 `getNpcAssetKey` / `getNpcAnimKey` 命名空间隔离
+- 新样式按职责放 `styles/*.css`，`style.css` 仅放 `@import`
+- 交互逻辑进 `js/ui/MenuController.js` 或独立 ui 模块，不写 inline `<script>`
+- `create()` 后手动 `load.start()` 启动 Phaser loader
+
+**Ask First**
+- 重命名/移动 `js/Photo`、`js/Audio` 目录（多处硬编码路径引用）
+- 修改主菜单布局（字号 / 间距 / 按钮尺寸已冻结）
+- 拆分 `LevelScene.js` 或其他大规模重构
+
+**Never Do**
+- 往 `style.css` 入口塞样式规则
+- 往 `index.html` 加 inline `<script>` 业务逻辑
+- 重新引入按钮 hover 标签的 JS opacity 逻辑
+- 加载失败时阻塞进关（应走已有 fallback）

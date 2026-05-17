@@ -200,9 +200,41 @@ function initStartButtons() {
     }
 }
 
+/* ---------------- 动态渐变 Favicon ---------------- */
+function initAnimatedFavicon() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const ctx = canvas.getContext('2d');
+    let hue = 0;
+
+    const link = document.querySelector("link[rel='icon']")
+        || document.createElement('link');
+    link.rel = 'icon';
+    if (!link.parentNode) document.head.appendChild(link);
+
+    function draw() {
+        hue = (hue + 2) % 360;
+        const grad = ctx.createLinearGradient(0, 0, 32, 32);
+        grad.addColorStop(0, `hsl(${hue}, 80%, 55%)`);
+        grad.addColorStop(1, `hsl(${(hue + 90) % 360}, 80%, 55%)`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 32, 32);
+        ctx.font = '24px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🎮', 16, 18);
+        link.href = canvas.toDataURL('image/png');
+    }
+
+    setInterval(draw, 80);
+    draw();
+}
+
 /* ---------------- 启动 ---------------- */
 initThemeToggle();
 initProfilePanel();
 initProjectPanel();
 initButtonProximity();
 initStartButtons();
+initAnimatedFavicon();
