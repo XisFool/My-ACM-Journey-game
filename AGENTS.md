@@ -16,6 +16,7 @@
 4 个城市关卡（南昌→深圳→桂林→重庆），玩家跳跃收集问号方块触发图文剧情弹窗，全部收集后进入下一关，最终展示通关画面。
 
 - **GitHub**: `XisFool/My-ACM-Journey-game` (main)
+- **Deployment**: [xisafool.uk](https://xisafool.uk)
 - **技术栈**: Phaser 3.60 + 原生 HTML/CSS/JS (ES Modules)，无构建步骤
 - **运行**: `python -m http.server`（纯静态托管）
 - **画布**: 960×540，Arcade 物理，`Phaser.Scale.ENVELOP` 自适应
