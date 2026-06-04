@@ -78,6 +78,24 @@ export default class BootScene extends Phaser.Scene {
             g.destroy();
         }
 
+        // --- 4. 金色星点纹理（给方块撞击粒子用）---
+        if (!this.textures.exists('particle_star')) {
+            const starGfx = this.make.graphics({ x: 0, y: 0, add: false });
+            starGfx.fillStyle(0xffd700, 1);
+            starGfx.fillRect(0, 0, 5, 5);
+            starGfx.generateTexture('particle_star', 5, 5);
+            starGfx.destroy();
+        }
+
+        // --- 5. 尘土纹理（给跳跃/落地用）---
+        if (!this.textures.exists('particle_dust')) {
+            const dustGfx = this.make.graphics({ x: 0, y: 0, add: false });
+            dustGfx.fillStyle(0xddddcc, 1);
+            dustGfx.fillCircle(3, 3, 3);
+            dustGfx.generateTexture('particle_dust', 6, 6);
+            dustGfx.destroy();
+        }
+
         // 纹理全部生成完毕后，进入主菜单
         this.scene.start('MenuScene');
     }

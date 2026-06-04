@@ -50,7 +50,7 @@ my-acm-journey/
 │   ├── config.js             # CANVAS_WIDTH=960, CANVAS_HEIGHT=540
 │   ├── story.js              # STORY 数据：4 关卡 levels[].bgImage/bgMusic/npcs/memoryBlocks
 │   ├── scenes/
-│   │   ├── BootScene.js      # preload: player_r/l 精灵; create: 动画注册 + qblock/particle_snow 纹理生成
+│   │   ├── BootScene.js      # preload: player_r/l 精灵; create: 动画注册 + qblock/particle_snow/particle_star/particle_dust 纹理生成
 │   │   ├── MenuScene.js      # 控制 #menu-overlay 显隐; 暴露 window._menuSceneRef; 处理 _pendingStart
 │   │   ├── LoadingScene.js   # AssetHelper 加载目标关资源; 进度条 + loaderror 记录 + 动态最小时长
 │   │   └── LevelScene.js     # 核心：背景/地面/玩家/方块/NPC/碰撞/HUD/BGM/粒子/预热/通关
@@ -133,9 +133,14 @@ BootScene  ──→  MenuScene  ──→  LoadingScene  ──→  LevelScene
 
 ### 4.4 玩家物理
 
-- 重力 900，跳跃 -340，Coyote Time 90ms，Jump Buffer 110ms
+- 重力 900，跳跃 -340（固定高度），Coyote Time 90ms，Jump Buffer 110ms
+- 移动用加速度 + 阻尼：`ACCEL 1800` / `DRAG 1500` / 最高速 `PLAYER_SPEED 207`（`setAccelerationX` + `setDragX` + `setMaxVelocityX`），松键靠 drag 滑行，速度 <30 才切 idle
+- 下落加速：`FALL_GRAVITY_MULT 1.8`，下落段额外叠加重力；非下落段清零 `accelerationY` 避免对冲起跳
+- 弹窗触发（hitBlock）时须 `setAccelerationX(0)`：弹窗期间 update() 提前 return，否则残留加速度让玩家持续移动
 - WASD + 方向键 + Space；左右各有独立精灵+碰撞体尺寸
 - 方块碰撞条件：未收集 & 弹窗关 & 玩家向上 & 头部接近方块底部
+- 撞块反馈：金色星点粒子爆开（`particle_star`，hitBlock）；跳跃/落地尘土（`particle_dust`，`_spawnDust()` + `wasOnGround` 检测落地）
+- 镜头：`startFollow(player, true, 0.12, 0.05)` + `setDeadzone(120, 60)`
 
 ### 4.5 NPC 系统
 

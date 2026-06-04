@@ -10,9 +10,12 @@ const CFG = {
     BG_SCROLL: 0.2,           // ← 背景跟随速度，0=不动 1=同步，自行微调
     GRAVITY: 900,
     JUMP_VELOCITY: -340,
+    FALL_GRAVITY_MULT: 1.8,    // ← 下落时额外重力倍数，越大落得越果断
     COYOTE_TIME_MS: 90,
     JUMP_BUFFER_MS: 110,
-    PLAYER_SPEED: 230,
+    PLAYER_SPEED: 207,        // ← 移动最高速（原 230，降 10%）
+    ACCEL: 1800,               // ← 加速度（px/s²），值越大启动越快
+    DRAG: 1500,                // ← 阻尼（px/s²），值越大停止越快
     GROUND_H: 58,              // ← 地面高度（约1格砖块）
     BLOCK_SIZE: 40,
 };
@@ -105,6 +108,8 @@ export default class LevelScene extends Phaser.Scene {
         // 精灵图帧 230×410，角色占中间区域，设置碰撞体覆盖主体
         this.player.body.setSize(120, 370);
         this.player.body.setOffset(55, 30);
+        this.player.body.setDragX(CFG.DRAG);
+        this.player.body.setMaxVelocityX(CFG.PLAYER_SPEED);
         this.facingRight = true;
         this.player.play('idle_r');
 
@@ -221,7 +226,8 @@ export default class LevelScene extends Phaser.Scene {
         // 7. 相机
         this.cameras.main.setBounds(0, 0, CFG.WORLD_W, CFG.H);
         this.physics.world.setBounds(0, 0, CFG.WORLD_W, CFG.H);
-        this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
+        this.cameras.main.startFollow(this.player, true, 0.12, 0.05);
+        this.cameras.main.setDeadzone(120, 60);  // 中央 ±60px/±30px 内镜头不动，减少微调抖动
 
         // 8. 输入
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -232,6 +238,7 @@ export default class LevelScene extends Phaser.Scene {
         this.lastGroundedAt = this.time.now;
         this.jumpPressedAt = -Infinity;
         this.jumpStarted = false;
+        this.wasOnGround = true;   // 上一帧是否在地面，用于检测落地时机
 
         // 9. HUD — 左上角关卡信息（3行：LEVEL N / CITY / YEAR）
         this.add.text(20, 34, `LEVEL  ${this.levelData.id}`, {
@@ -363,8 +370,22 @@ export default class LevelScene extends Phaser.Scene {
             }
         });
 
+        // === 粒子爆开（金色星点，向上散射）===
+        const burst = this.add.particles(block.x, block.y - 20, 'particle_star', {
+            speed: { min: 80, max: 220 },
+            angle: { min: 220, max: 320 },   // 主要向上偏左右散射
+            scale: { start: 1.0, end: 0 },
+            alpha: { start: 1, end: 0 },
+            lifespan: 420,
+            quantity: 10,
+            emitting: false,
+        });
+        burst.explode(10);
+        this.time.delayedCall(500, () => burst.destroy());
+
         // 4. 暂停玩家并在顶部反弹
         this.modalOpen = true;
+        player.setAccelerationX(0); // 清加速度，否则弹窗期间 update() return，玩家持续移动
         player.setVelocityX(0);
         player.setVelocityY(50); // 给个向下反弹效果
 
@@ -456,9 +477,9 @@ export default class LevelScene extends Phaser.Scene {
             this.jumpPressedAt = this.time.now;
         }
 
-        // 左右移动 + 动画切换
+        // 左右移动 + 动画切换（加速度 + drag 阻尼）
         if (left) {
-            this.player.setVelocityX(-CFG.PLAYER_SPEED);
+            this.player.setAccelerationX(-CFG.ACCEL);
             if (this.facingRight) {
                 this.facingRight = false;
                 this.player.body.setSize(120, 355);
@@ -466,7 +487,7 @@ export default class LevelScene extends Phaser.Scene {
             }
             this.player.play('walk_l', true);
         } else if (right) {
-            this.player.setVelocityX(CFG.PLAYER_SPEED);
+            this.player.setAccelerationX(CFG.ACCEL);
             if (!this.facingRight) {
                 this.facingRight = true;
                 this.player.body.setSize(120, 370);
@@ -474,9 +495,18 @@ export default class LevelScene extends Phaser.Scene {
             }
             this.player.play('walk_r', true);
         } else {
-            this.player.setVelocityX(0);
-            this.player.play(this.facingRight ? 'idle_r' : 'idle_l', true);
+            this.player.setAccelerationX(0);             // drag 自动处理减速
+            // 动画时机修正：等速度接近 0 再切 idle，避免"还在滑动却已 idle"
+            if (Math.abs(this.player.body.velocity.x) < 30) {
+                this.player.play(this.facingRight ? 'idle_r' : 'idle_l', true);
+            }
         }
+
+        // 落地检测：上一帧不在地面，这一帧在地面，且速度向下（真实落地，排除蹭墙）
+        if (!this.wasOnGround && onGround && body.velocity.y >= 0) {
+            this._spawnDust(this.player.x, this.player.body.bottom, 'land');
+        }
+        this.wasOnGround = onGround;
 
         // 跳跃（一段跳，固定高度）
         const canUseCoyote = (this.time.now - this.lastGroundedAt) <= CFG.COYOTE_TIME_MS;
@@ -486,14 +516,42 @@ export default class LevelScene extends Phaser.Scene {
             this.player.setVelocityY(CFG.JUMP_VELOCITY);
             this.jumpPressedAt = -Infinity;
             this.jumpStarted = true;
+            this._spawnDust(this.player.x, this.player.body.bottom, 'jump');
         }
 
         if (onGround && body.velocity.y >= 0) {
             this.jumpStarted = false;
         }
 
+        // 下落加速：下落段额外叠加重力，让角色落得更果断有重量感
+        if (!onGround && body.velocity.y > 0) {
+            this.player.setAccelerationY(CFG.GRAVITY * CFG.FALL_GRAVITY_MULT);
+        } else {
+            this.player.setAccelerationY(0);  // 上升段/落地用默认重力，避免残留加速度对冲下次起跳
+        }
+
         // NPC 近距离检测
         this._updateNPCs(delta);
+    }
+
+    // ── 跳跃/落地尘土粒子 ───────────────────────────
+    _spawnDust(x, y, dir = 'land') {
+        // dir: 'land' = 落地（水平扩散）；'jump' = 起跳（向下小爆）
+        const angle = dir === 'jump'
+            ? { min: 150, max: 210 }   // 向下两侧
+            : { min: 160, max: 200 };  // 落地：基本水平扩散
+
+        const dust = this.add.particles(x, y, 'particle_dust', {
+            speed: { min: 40, max: 110 },
+            angle,
+            scale: { start: 0.9, end: 0 },
+            alpha: { start: 0.7, end: 0 },
+            lifespan: dir === 'jump' ? 280 : 350,
+            quantity: dir === 'jump' ? 5 : 8,
+            emitting: false,
+        });
+        dust.explode(dir === 'jump' ? 5 : 8);
+        this.time.delayedCall(400, () => dust.destroy());
     }
 
     // ── 气泡对话框 ─────────────────────────────────
@@ -572,7 +630,10 @@ export default class LevelScene extends Phaser.Scene {
 
     // ── 粒子特效 (简易实现) ──────────────────────
     _createParticles() {
-        if (this.levelData.particle === 'snow') {
+        const p = this.levelData.particle;
+        if (!p) return;
+
+        if (p === 'snow') {
             this.add.particles(0, 0, 'particle_snow', {
                 x: { min: 0, max: CFG.WORLD_W },
                 y: -50,
