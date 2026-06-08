@@ -11,11 +11,11 @@ const PROJECTS_DATA = [
         image: 'js/Photo/Projects/01.webp',
     },
     {
-        title: 'TravelGraph · 大学生旅行规划 Agent',
-        tags: ['LangGraph', 'RAG', 'HITL', 'Pydantic v2', 'Streamlit'],
-        desc: '基于 LangGraph 的多节点旅行 Agent：Chroma 语义检索稳定攻略 + 高德 / 和风 / Tavily 工具补全实时信息 + Critic 评分自我修订 + 人工 HITL 确认。面向大学生特种兵玩法，覆盖成都 / 杭州 / 西安 / 重庆 / 北京 5 城，Streamlit 前端完整可视化 Agent 执行过程。',
+        title: 'Gemini LiveScreen · 桌面级 AI 屏幕语音助手',
+        tags: ['Electron', 'Gemini Live API', 'Node.js', 'WebSocket', 'Clay 3D 美学'],
+        desc: '基于 Gemini Live API 的原生 Electron 桌面级实时屏幕与语音辅导助手。实现 1fps 屏幕高质量采样与 16000Hz PCM 音频流低延迟传输，支持即时打断机制（Barge-in）。具备系统代理自动提取、协议智能 Fallback、一键连通性测试以及自适应代理一键更新。主界面采用 Clay 3D 粘土风格微质感与磨砂亚克力设计，融合极窄自适应悬浮小窗，保障本地 API Key 硬件级 safeStorage 安全存储。',
         year: '2026',
-        image: 'js/Photo/Projects/02.webp',
+        image: 'js/Photo/Projects/02.png',
     },
     {
         title: 'Law-Bot · 法律法规智能问答',

@@ -22,11 +22,12 @@ const PROFILE_DATA = {
     hobbies: ['足球', 'Vibe Coding', 'XCPC', 'CS2'],
     awards: [
         { name: 'CCPC 重庆区域赛 铜奖',                year: '2024' },
+        { name: 'CCPC福建邀请赛 铜奖',                  year: '2024' },
         { name: 'ICPC 江西省赛 银奖',                  year: '2024' },
         { name: '睿抗机器人开发者大赛 全国一等奖',     year: '2024' },
         { name: '第十五届蓝桥杯 C/C++ B组 全国一等奖', year: '2025' },
         { name: '百度之星程序设计大赛 初赛银奖',        year: '2024' },
-        { name: '程序设计天梯赛 国家三等奖',            year: '2024' },
+        { name: '程序设计天梯赛 国家二等奖',            year: '2026' },
     ],
 };
 

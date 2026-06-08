@@ -1,6 +1,6 @@
 # AGENTS.md — My ACM Journey
 
-> 面向 AI 编码 Agent 的项目上下文速查。最后更新：2026-05-17。
+> 面向 AI 编码 Agent 的项目上下文速查。最后更新：2026-06-08。
 
 ## 为什么有这个文件
 
@@ -68,7 +68,7 @@ my-acm-journey/
 │       ├── Background/       # 4 城背景 + GameOver.webp
 │       ├── Qiu/              # 玩家精灵 Qiu_R/L.png + Head.jpg(Profile头像)
 │       ├── Other_character/  # Kirby.png (NPC 精灵图)
-│       ├── Projects/         # Project 面板 3D Intro 卡图 01-03.webp（用户提供）
+│       ├── Projects/         # Project 面板 3D Intro 卡图 01,03.webp, 02.png（用户提供）
 │       └── *_memo/           # 各关剧情图 A/B/C 系列 .webp
 ├── Progress.md               # 本地开发进度笔记（.gitignore 排除，不随仓库提供）
 └── AGENTS.md                 # 本文件（面向 AI Agent 的上下文速查）
