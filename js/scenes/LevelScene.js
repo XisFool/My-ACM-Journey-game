@@ -81,7 +81,7 @@ export default class LevelScene extends Phaser.Scene {
                 .setDepth(-100);
             // 自动适配：先算出让图片高度=视口高度的基准缩放
             // BG_SCALE_MULT ← 在此微调（1.0=刚好填满高度，<1缩小，>1放大）
-            const BG_SCALE_MULT = 0.96;
+            const BG_SCALE_MULT = 0.98;
             const autoScale = CFG.H / this.bgImage.height;
             this.bgImage.setScale(autoScale * BG_SCALE_MULT);
         } else {
@@ -94,14 +94,15 @@ export default class LevelScene extends Phaser.Scene {
             }
         }
 
-        // 2. 地面（无可见砖块，仅保留隐形碰撞体）
+        // 2. 地面（无可见砖块，仅保留隐形碰撞体，累计向下移10px）
         this.groundGroup = this.physics.add.staticGroup();
-        const groundCol = this.add.rectangle(CFG.WORLD_W / 2, CFG.H - CFG.GROUND_H + CFG.GROUND_H / 2, CFG.WORLD_W, CFG.GROUND_H, 0x000000, 0);
+        // 将碰撞体向下延伸500px，顶面下移10px（y = CFG.H - CFG.GROUND_H + 10）
+        const groundCol = this.add.rectangle(CFG.WORLD_W / 2, (CFG.H - CFG.GROUND_H + 10) + 500 / 2, CFG.WORLD_W, 500, 0x000000, 0);
         this.groundGroup.add(groundCol);
         groundCol.body.updateFromGameObject();
 
         // 3. 玩家（使用精灵图表动画）
-        this.player = this.physics.add.sprite(100, CFG.H - CFG.GROUND_H - 51, 'player_r');
+        this.player = this.physics.add.sprite(100, CFG.H - CFG.GROUND_H - 41, 'player_r');
         this.player.setScale(0.21, 0.18);
         this.player.setCollideWorldBounds(false);
         this.player.setGravityY(CFG.GRAVITY);
@@ -153,7 +154,7 @@ export default class LevelScene extends Phaser.Scene {
             const bx1 = 400 + (idx1 + 0.5) * spacing;
             const bx2 = 400 + (idx2 + 0.5) * spacing;
             const npcX = (bx1 + bx2) / 2;
-            const npcY = CFG.H - CFG.GROUND_H + 5;
+            const npcY = CFG.H - CFG.GROUND_H + 10;
 
             // 如果是精灵图，创建动画并播放
             let sprite;
@@ -217,9 +218,12 @@ export default class LevelScene extends Phaser.Scene {
 
         // 加上防止掉出地图的保护（尽管collideWorldBounds=false）
         this.events.on('update', () => {
+            // 1. 掉出地图兜底
             if (this.player.y > CFG.H + 200) {
-                this.player.setPosition(100, CFG.H - CFG.GROUND_H - 51);
+                this.player.setPosition(100, CFG.H - CFG.GROUND_H - 41);
                 this.player.setVelocity(0, 0);
+                this.player.setAcceleration(0, 0);
+                this.cameras.main.scrollX = 0;
             }
         });
 
@@ -455,6 +459,24 @@ export default class LevelScene extends Phaser.Scene {
 
     // ── update() ─────────────────────────────────
     update(time, delta) {
+        // 未顶完所有方块，且玩家移动越过右端边界时，直接平滑重置回左端起点（无下坠/无掉帧卡顿）
+        if (this.collected < this.totalBlocks && this.player.x >= CFG.WORLD_W) {
+            this.cameras.main.stopFollow();
+            this.player.body.reset(100, CFG.H - CFG.GROUND_H - 41);
+            this.player.play(this.facingRight ? 'idle_r' : 'idle_l', true);
+            this.cameras.main.scrollX = 0;
+            this.cameras.main.startFollow(this.player, true, 0.12, 0.05);
+        }
+
+        // 往左走出左端边界（x <= 0），平滑传送回到起点（无下坠/无掉帧卡顿）
+        if (this.player.x <= 0) {
+            this.cameras.main.stopFollow();
+            this.player.body.reset(100, CFG.H - CFG.GROUND_H - 41);
+            this.player.play(this.facingRight ? 'idle_r' : 'idle_l', true);
+            this.cameras.main.scrollX = 0;
+            this.cameras.main.startFollow(this.player, true, 0.12, 0.05);
+        }
+
         // 开头检查
         if (this.modalOpen) {
             // 在弹窗期间，不响应输入，但物理引擎依旧运行
