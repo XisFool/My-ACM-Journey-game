@@ -2,7 +2,7 @@
    LevelScene.js — 核心游戏场景
    ============================================ */
 import { STORY } from '../story.js';
-import { clearPreloadedImages, collectLevelAssets, getNpcAnimKey, getNpcAssetKey, isLevelPreheated, markLevelPreheated, preloadImage, preloadMemoryImages, queueAssets } from '../utils/AssetHelper.js';
+import { clearPreloadedImages, collectLevelAssets, getNpcAnimKey, getNpcAssetKey, isLevelPreheated, markLevelPreheated, preloadImage, preloadMemoryImages, queueAssets, retryPreloadedImage } from '../utils/AssetHelper.js';
 
 const CFG = {
     W: 960, H: 540,
@@ -44,6 +44,9 @@ export default class LevelScene extends Phaser.Scene {
     create() {
         // 持久化当前关卡索引，供主菜单 CONTINUE 读取
         try { localStorage.setItem('acm_journey_last_level', String(this.lvIdx)); } catch (_) { /* 无痕模式 */ }
+
+        // 当前关剧情图尽早后台预热，不影响进入关卡。
+        preloadMemoryImages(this.levelData).catch(() => {});
 
         const bgNum = parseInt(this.levelData.bgColor.replace('#', ''), 16) || 0x000000;
         this.cameras.main.setBackgroundColor(bgNum);
@@ -301,7 +304,7 @@ export default class LevelScene extends Phaser.Scene {
         // 淡入（黑→透明，与 fadeOut 对齐；避免把整个 hex 当 red 通道传导致红屏）
         this.cameras.main.fadeIn(500, 0, 0, 0);
 
-        // 延迟 1.5 秒后，在后台静默预加载本关剧情图片与下一关资源
+        // 延迟 1.5 秒后，在后台静默预加载下一关资源
         // 不会阻塞主线程和玩家操作
         this.time.delayedCall(1500, () => {
             this._preloadBackgroundAssets();
@@ -310,15 +313,14 @@ export default class LevelScene extends Phaser.Scene {
 
     // ── 后台预加载 ────────────────────────────────
     _preloadBackgroundAssets() {
-        // 1. DOM 层：本关 + 下一关 memory 图片预热（去重幂等）
-        preloadMemoryImages(this.levelData);
+        // 1. DOM 层：下一关 memory 图片预热（去重幂等）
         const nextIdx = this.lvIdx + 1;
         const nextLevel = STORY.levels[nextIdx];
         if (nextLevel) {
-            preloadMemoryImages(nextLevel);
+            preloadMemoryImages(nextLevel).catch(() => {});
         } else {
             // 最后一关：预热通关图
-            preloadImage('js/Photo/Background/GameOver.webp');
+            preloadImage('js/Photo/Background/GameOver.webp').catch(() => {});
         }
 
         // 2. Phaser 层：下一关 bg / bgm / npc 预热
@@ -437,11 +439,50 @@ export default class LevelScene extends Phaser.Scene {
         const screen = document.createElement('div');
         screen.id = 'end-screen';
 
+        const content = document.createElement('div');
+        content.className = 'end-screen-content';
         const img = document.createElement('img');
-        img.src = 'js/Photo/Background/GameOver.webp';
-        screen.appendChild(img);
+        img.style.display = 'none';
+        const status = document.createElement('p');
+        status.className = 'end-screen-status';
+        status.textContent = 'LOADING MEMORY...';
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'end-screen-retry';
+        retryBtn.textContent = 'RETRY';
+        retryBtn.style.display = 'none';
+        content.appendChild(img);
+        content.appendChild(status);
+        content.appendChild(retryBtn);
+        screen.appendChild(content);
+
+        let imageGeneration = 0;
+        const loadEndImage = (retry) => {
+            const generation = ++imageGeneration;
+            img.style.display = 'none';
+            retryBtn.style.display = 'none';
+            status.textContent = retry ? 'RETRYING MEMORY...' : 'LOADING MEMORY...';
+            const request = retry
+                ? retryPreloadedImage('js/Photo/Background/GameOver.webp')
+                : preloadImage('js/Photo/Background/GameOver.webp');
+            request.then((image) => {
+                if (generation !== imageGeneration || !screen.isConnected) return;
+                img.src = image.src;
+                img.style.display = 'block';
+                status.style.display = 'none';
+            }).catch(() => {
+                if (generation !== imageGeneration || !screen.isConnected) return;
+                status.textContent = 'MEMORY FAILED TO LOAD.';
+                retryBtn.style.display = 'inline-block';
+            });
+        };
+
+        retryBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            loadEndImage(true);
+        });
 
         screen.addEventListener('click', () => {
+            imageGeneration += 1;
             screen.remove();
             this.sound.stopAll();
             this.registry.set('_bgmKey', null);
@@ -455,6 +496,7 @@ export default class LevelScene extends Phaser.Scene {
         });
 
         document.body.appendChild(screen);
+        loadEndImage(false);
     }
 
     // ── update() ─────────────────────────────────

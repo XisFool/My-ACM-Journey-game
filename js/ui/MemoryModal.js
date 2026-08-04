@@ -3,7 +3,7 @@
    动态创建挂载到 body，不依赖 Phaser。
    支持图片 + 文字混合展示，点击图片/导航翻页
    ============================================ */
-import { getPreloadedImage, preloadImage } from '../utils/AssetHelper.js';
+import { preloadImage, retryPreloadedImage } from '../utils/AssetHelper.js';
 
 class MemoryModalController {
     constructor() {
@@ -14,6 +14,8 @@ class MemoryModalController {
         this.slides = [];
         this.index = 0;
         this.onCloseFn = null;
+        this.renderGeneration = 0;
+        this.fadeFrame = null;
     }
 
     createDOM() {
@@ -30,6 +32,25 @@ class MemoryModalController {
         this.imageEl = document.createElement('img');
         this.imageEl.className = 'modal-image';
         this.imageEl.addEventListener('click', () => this.next());
+
+        this.imageStage = document.createElement('div');
+        this.imageStage.className = 'modal-image-stage';
+        this.imageStage.appendChild(this.imageEl);
+
+        this.imageStateEl = document.createElement('div');
+        this.imageStateEl.className = 'modal-image-state';
+        this.imageMessageEl = document.createElement('p');
+        this.imageMessageEl.className = 'modal-image-message';
+        this.retryBtn = document.createElement('button');
+        this.retryBtn.className = 'modal-retry';
+        this.retryBtn.textContent = 'RETRY';
+        this.retryBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.retryCurrentImage();
+        });
+        this.imageStateEl.appendChild(this.imageMessageEl);
+        this.imageStateEl.appendChild(this.retryBtn);
+        this.imageStage.appendChild(this.imageStateEl);
 
         // 文字
         this.textEl = document.createElement('p');
@@ -52,7 +73,7 @@ class MemoryModalController {
         this.bottomBar.appendChild(this.closeBtn);
 
         // 组装 DOM
-        this.box.appendChild(this.imageEl);
+        this.box.appendChild(this.imageStage);
         this.box.appendChild(this.textEl);
         this.box.appendChild(this.navEl);
         this.box.appendChild(this.bottomBar);
@@ -72,49 +93,37 @@ class MemoryModalController {
      * @param {Function} onCloseFn - 弹窗关闭后的回调函数
      */
     open(city, slides, onCloseFn) {
-        if (!slides || slides.length === 0) return;
+        if (!slides || slides.length === 0) {
+            if (onCloseFn) onCloseFn();
+            return false;
+        }
 
+        this.invalidateRender();
         this.city = city;
         this.slides = slides;
         this.onCloseFn = onCloseFn;
         this.index = 0;
 
-        // 优先复用 AssetHelper 已预加载的图片，避免重复 new Image / 解码
-        this._preloaded = slides.map(s => {
-            if (!s.image) return null;
-            const cached = getPreloadedImage(s.image);
-            if (cached) return cached;
-            // 兜底：未预热过则即时入队（同时写入共享缓存，下次复用）
-            preloadImage(s.image);
-            return getPreloadedImage(s.image);
-        });
-
         this.overlay.style.display = 'flex';
         this.render();
+        return true;
     }
 
     render() {
         const slide = this.slides[this.index];
         const total = this.slides.length;
+        const generation = ++this.renderGeneration;
 
-        // 图片（淡入切换）
         if (slide.image) {
-            this.imageEl.style.display = 'block';
-            this.imageEl.style.cursor = (this.index < total - 1) ? 'pointer' : 'default';
-            const pre = this._preloaded && this._preloaded[this.index];
-            if (pre && pre.complete && pre.naturalWidth > 0) {
-                // 图片已成功缓存，直接淡入
-                this.imageEl.style.opacity = '0';
-                this.imageEl.src = pre.src;
-                requestAnimationFrame(() => { this.imageEl.style.opacity = '1'; });
-            } else {
-                // 仍在加载（或缓存失效），监听完成后淡入
-                this.imageEl.style.opacity = '0';
-                this.imageEl.src = slide.image;
-                this.imageEl.onload = () => { this.imageEl.style.opacity = '1'; };
-            }
-        } else {
+            this.imageStage.style.display = 'block';
+            this.imageEl.removeAttribute('src');
             this.imageEl.style.display = 'none';
+            this.imageEl.style.opacity = '0';
+            this.imageEl.style.cursor = (this.index < total - 1) ? 'pointer' : 'default';
+            this.showImageState('LOADING IMAGE...', false);
+            this.loadCurrentImage(slide.image, generation, false);
+        } else {
+            this.imageStage.style.display = 'none';
         }
 
         // 文字
@@ -136,7 +145,60 @@ class MemoryModalController {
         }
     }
 
+    loadCurrentImage(src, generation, retry) {
+        const request = retry ? retryPreloadedImage(src) : preloadImage(src);
+        request.then((image) => {
+            if (!this.isCurrentRender(generation)) return;
+            this.imageEl.src = image.src;
+            this.imageEl.style.display = 'block';
+            this.hideImageState();
+            this.fadeFrame = requestAnimationFrame(() => {
+                if (this.isCurrentRender(generation)) this.imageEl.style.opacity = '1';
+            });
+        }).catch(() => {
+            if (!this.isCurrentRender(generation)) return;
+            this.imageEl.removeAttribute('src');
+            this.imageEl.style.display = 'none';
+            this.showImageState('IMAGE FAILED TO LOAD.', true);
+        });
+    }
+
+    retryCurrentImage() {
+        const slide = this.slides[this.index];
+        if (!slide || !slide.image) return;
+
+        const generation = ++this.renderGeneration;
+        this.imageEl.removeAttribute('src');
+        this.imageEl.style.display = 'none';
+        this.imageEl.style.opacity = '0';
+        this.showImageState('RETRYING IMAGE...', false);
+        this.loadCurrentImage(slide.image, generation, true);
+    }
+
+    showImageState(message, canRetry) {
+        this.imageMessageEl.textContent = message;
+        this.retryBtn.style.display = canRetry ? 'inline-block' : 'none';
+        this.imageStateEl.style.display = 'flex';
+    }
+
+    hideImageState() {
+        this.imageStateEl.style.display = 'none';
+    }
+
+    isCurrentRender(generation) {
+        return generation === this.renderGeneration && this.overlay.style.display === 'flex';
+    }
+
+    invalidateRender() {
+        this.renderGeneration += 1;
+        if (this.fadeFrame) {
+            cancelAnimationFrame(this.fadeFrame);
+            this.fadeFrame = null;
+        }
+    }
+
     next() {
+        if (this.slides.length === 0) return;
         if (this.index < this.slides.length - 1) {
             this.index++;
             this.render();
@@ -146,7 +208,12 @@ class MemoryModalController {
     }
 
     close() {
+        this.invalidateRender();
         this.overlay.style.display = 'none';
+        this.imageEl.removeAttribute('src');
+        this.imageEl.style.opacity = '0';
+        this.slides = [];
+        this.index = 0;
         if (this.onCloseFn) {
             this.onCloseFn();
             this.onCloseFn = null;
