@@ -16,3 +16,10 @@ Planning.md
 # 系统垃圾文件
 Thumbs.db
 .DS_Store
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
