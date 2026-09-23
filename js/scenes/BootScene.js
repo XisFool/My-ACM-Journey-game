@@ -15,14 +15,14 @@ export default class BootScene extends Phaser.Scene {
         });
         this.load.spritesheet('player_l', 'js/Photo/Qiu/Qiu_L.png', {
             frameWidth: 230,
-            frameHeight: 395,
+            frameHeight: 410,
         });
         // 不在这里一次性加载所有的背景大图和BGM，将它们延迟到 LoadingScene!
     }
 
     create() {
         // --- 1. 角色动画注册 ---
-        // 右方向：帧 0 = 站立，帧 1-4 = 走动
+        // 右方向：帧 0 = 站立，帧 1-5 = 走动
         this.anims.create({
             key: 'idle_r',
             frames: this.anims.generateFrameNumbers('player_r', { start: 0, end: 0 }),
@@ -31,11 +31,11 @@ export default class BootScene extends Phaser.Scene {
         });
         this.anims.create({
             key: 'walk_r',
-            frames: this.anims.generateFrameNumbers('player_r', { start: 1, end: 4 }),
-            frameRate: 8,
+            frames: this.anims.generateFrameNumbers('player_r', { start: 1, end: 5 }),
+            frameRate: 6,
             repeat: -1,
         });
-        // 左方向：帧 0 = 站立，帧 1-4 = 走动
+        // 左方向：帧 0 = 站立，帧 1-5 = 走动
         this.anims.create({
             key: 'idle_l',
             frames: this.anims.generateFrameNumbers('player_l', { start: 0, end: 0 }),
@@ -44,8 +44,8 @@ export default class BootScene extends Phaser.Scene {
         });
         this.anims.create({
             key: 'walk_l',
-            frames: this.anims.generateFrameNumbers('player_l', { start: 1, end: 4 }),
-            frameRate: 8,
+            frames: this.anims.generateFrameNumbers('player_l', { start: 1, end: 5 }),
+            frameRate: 6,
             repeat: -1,
         });
 

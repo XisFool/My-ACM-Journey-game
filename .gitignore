@@ -16,3 +16,7 @@ Planning.md
 # 系统垃圾文件
 Thumbs.db
 .DS_Store
+
+# 本地测试与 Scratchpad 目录
+ai_scratchpad/
+.playwright-cli/

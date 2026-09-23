@@ -106,7 +106,7 @@ export default class LevelScene extends Phaser.Scene {
 
         // 3. 玩家（使用精灵图表动画）
         this.player = this.physics.add.sprite(100, CFG.H - CFG.GROUND_H - 41, 'player_r');
-        this.player.setScale(0.21, 0.18);
+        this.player.setScale(0.21, 0.20);
         this.player.setCollideWorldBounds(false);
         this.player.setGravityY(CFG.GRAVITY);
         // 精灵图帧 230×410，角色占中间区域，设置碰撞体覆盖主体
@@ -546,7 +546,7 @@ export default class LevelScene extends Phaser.Scene {
             this.player.setAccelerationX(-CFG.ACCEL);
             if (this.facingRight) {
                 this.facingRight = false;
-                this.player.body.setSize(120, 355);
+                this.player.body.setSize(120, 370);
                 this.player.body.setOffset(55, 30);
             }
             this.player.play('walk_l', true);

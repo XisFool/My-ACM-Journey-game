@@ -1,0 +1,17 @@
+{
+  "name": "my-acm-journey",
+  "version": "1.0.0",
+  "private": true,
+  "description": "My ACM Journey - Pixel adventure biographical game",
+  "scripts": {
+    "dev": "python -m http.server 8080",
+    "start": "python -m http.server 8080"
+  },
+  "keywords": [
+    "phaser",
+    "pixel-art",
+    "game"
+  ],
+  "author": "XisFool",
+  "license": "MIT"
+}
