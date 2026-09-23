@@ -190,6 +190,7 @@ export default class LevelScene extends Phaser.Scene {
             // 自动缩放：让 NPC 高度约 30px
             const targetH = 31.5;
             sprite.setScale(targetH / sprite.height);
+            sprite.baseY = npcY;
 
             // "!" 提示（靠近时显示）
             const exclaim = this.add.text(npcX, npcY - targetH - 16, '!', {
@@ -213,6 +214,12 @@ export default class LevelScene extends Phaser.Scene {
                 triggered: false,
                 proximityRange: 80,
             });
+        });
+
+        this.events.once('shutdown', () => {
+            if (this.npcs) {
+                this.npcs.forEach(npc => this._clearBubbleTweens(npc));
+            }
         });
 
         // 6. 碰撞
@@ -631,10 +638,15 @@ export default class LevelScene extends Phaser.Scene {
             color: '#ffffff',
             wordWrap: { width: maxWidth },
             lineSpacing: 2,
-        }).setOrigin(0.5);
+            align: 'left',
+        }).setOrigin(0, 0);
 
         const bw = txt.width + padding * 2;
         const bh = txt.height + padding * 2;
+
+        const textBaseX = -bw / 2 + padding;
+        const textBaseY = -bh / 2 + padding;
+        txt.setPosition(textBaseX, textBaseY);
 
         // 圆角矩形背景（浅色，无边框）
         const bg = this.add.graphics();
@@ -645,7 +657,21 @@ export default class LevelScene extends Phaser.Scene {
         bg.fillStyle(0x000000, 0.75);
         bg.fillTriangle(-4, bh / 2, 4, bh / 2, 0, bh / 2 + 6);
 
+        // 初始清空文字，等待逐字渐进冒出
+        txt.setText('');
+
         container.add([bg, txt]);
+
+        // 挂载数据与动画控制句柄
+        container.txt = txt;
+        container.fullText = text;
+        container.baseX = x;
+        container.baseY = y;
+        container.textBaseX = textBaseX;
+        container.textBaseY = textBaseY;
+        container.typewriterTimer = null;
+        container.floatTween = null;
+
         return container;
     }
 
@@ -668,28 +694,123 @@ export default class LevelScene extends Phaser.Scene {
                     // 触发对话
                     npc.triggered = true;
                     npc.exclaim.setAlpha(0);
-                    npc.bubble.setAlpha(1);
-
-                    // 气泡淡入动画
-                    this.tweens.add({
-                        targets: npc.bubble,
-                        alpha: { from: 0, to: 1 },
-                        y: npc.bubble.y - 8,
-                        duration: 300,
-                        ease: 'Power2',
-                    });
+                    this._showBubble(npc);
                 }
             } else if (!isNear) {
                 npc.nearTimer = 0;
                 npc.exclaim.setAlpha(0);
-                // 离开后气泡消失，下次还能再触发
+                // 离开后气泡平滑消失，下次还能再触发
                 if (npc.triggered) {
                     npc.triggered = false;
-                    npc.bubble.setAlpha(0);
-                    npc.bubble.y += 8; // 复位
+                    this._hideBubble(npc, true);
                 }
             }
         });
+    }
+
+    // ── 气泡展示与渐进式打字 + 跳动效果 ─────────
+    _showBubble(npc) {
+        const bubble = npc.bubble;
+        this._clearBubbleTweens(npc);
+
+        bubble.setPosition(bubble.baseX, bubble.baseY);
+        bubble.setScale(0.2);
+        bubble.setAlpha(0);
+        bubble.txt.setText('');
+        bubble.txt.setPosition(bubble.textBaseX, bubble.textBaseY);
+        bubble.txt.setScale(1);
+
+        // 1. 气泡弹跳展开（从 0.2 弹性弹出到 1）
+        this.tweens.add({
+            targets: bubble,
+            scale: { from: 0.2, to: 1 },
+            alpha: { from: 0, to: 1 },
+            y: bubble.baseY - 8,
+            duration: 260,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+                this._startTypewriter(npc);
+            }
+        });
+    }
+
+    _startTypewriter(npc) {
+        const bubble = npc.bubble;
+        const fullText = bubble.fullText;
+        let charIndex = 0;
+
+        // 逐字平稳冒出（打字机渐进效果，无字体跳动）
+        bubble.typewriterTimer = this.time.addEvent({
+            delay: 42,
+            repeat: fullText.length - 1,
+            callback: () => {
+                charIndex++;
+                bubble.txt.setText(fullText.slice(0, charIndex));
+
+                // 打字完成
+                if (charIndex >= fullText.length) {
+                    this._onTypewriterComplete(bubble);
+                }
+            }
+        });
+    }
+
+    _onTypewriterComplete(bubble) {
+        if (!bubble || bubble.alpha < 0.5) return;
+
+        // 文字全部吐出后，气泡轻柔上下漂浮呼吸
+        bubble.floatTween = this.tweens.add({
+            targets: bubble,
+            y: bubble.baseY - 11,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+    }
+
+    _hideBubble(npc, animated = true) {
+        const bubble = npc.bubble;
+        this._clearBubbleTweens(npc);
+
+        if (animated && bubble.alpha > 0.05) {
+            this.tweens.add({
+                targets: bubble,
+                scale: 0.2,
+                alpha: 0,
+                duration: 180,
+                ease: 'Back.easeIn',
+                onComplete: () => {
+                    bubble.setPosition(bubble.baseX, bubble.baseY);
+                    bubble.setScale(1);
+                    bubble.setAlpha(0);
+                    bubble.txt.setText('');
+                    bubble.txt.setPosition(bubble.textBaseX, bubble.textBaseY);
+                    bubble.txt.setScale(1);
+                }
+            });
+        } else {
+            bubble.setPosition(bubble.baseX, bubble.baseY);
+            bubble.setScale(1);
+            bubble.setAlpha(0);
+            bubble.txt.setText('');
+            bubble.txt.setPosition(bubble.textBaseX, bubble.textBaseY);
+            bubble.txt.setScale(1);
+        }
+    }
+
+    _clearBubbleTweens(npc) {
+        const bubble = npc.bubble;
+        if (!bubble) return;
+
+        if (bubble.typewriterTimer) {
+            bubble.typewriterTimer.remove(false);
+            bubble.typewriterTimer = null;
+        }
+        if (bubble.floatTween) {
+            bubble.floatTween.stop();
+            bubble.floatTween = null;
+        }
     }
 
     // ── 粒子特效 (简易实现) ──────────────────────
