@@ -137,7 +137,10 @@ export default class LevelScene extends Phaser.Scene {
                 duration: 1200,
                 yoyo: true,
                 repeat: -1,
-                ease: 'Sine.easeInOut'
+                ease: 'Sine.easeInOut',
+                onUpdate: () => {
+                    block.body.updateFromGameObject();
+                }
             });
         });
 
@@ -255,28 +258,43 @@ export default class LevelScene extends Phaser.Scene {
         this.wasOnGround = true;   // 上一帧是否在地面，用于检测落地时机
 
         // 9. HUD — 左上角关卡信息（3行：LEVEL N / CITY / YEAR）
-        this.add.text(20, 34, `LEVEL  ${this.levelData.id}`, {
+        const hudLevelText = this.add.text(20, 34, `LEVEL  ${this.levelData.id}`, {
             fontFamily: '"Press Start 2P"',
             fontSize: '14px',
             color: '#ffffff',
             shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 0, fill: true },
         }).setScrollFactor(0).setDepth(20);
 
-        this.add.text(20, 56, this.levelData.cityEn || this.levelData.city, {
+        const hudCityText = this.add.text(20, 56, this.levelData.cityEn || this.levelData.city, {
             fontFamily: '"Press Start 2P"',
             fontSize: '26px',
             color: '#000000',
             shadow: { offsetX: 0, offsetY: 0, color: '#ffffff', blur: 0, fill: false },
         }).setScrollFactor(0).setDepth(20).setStroke('#ffffff', 4);
 
-        this.add.text(20, 92, this.levelData.year, {
+        const hudYearText = this.add.text(20, 92, this.levelData.year, {
             fontFamily: '"Press Start 2P"',
             fontSize: '14px',
             color: '#ffffff',
             shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 0, fill: true },
         }).setScrollFactor(0).setDepth(20);
 
-        this.hudCountText  = this.add.text(CFG.W - 20, 40, `Collected: ${this.collected}/${this.totalBlocks}`, { fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#ffffff' }).setOrigin(1, 0).setScrollFactor(0).setDepth(20);
+        this.hudCountText = this.add.text(CFG.W - 20, 40, `Collected: ${this.collected}/${this.totalBlocks}`, { fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#ffffff' }).setOrigin(1, 0).setScrollFactor(0).setDepth(20);
+
+        // 如果在弱网环境下进关时该字体尚未就绪，就绪后重设一次以更新 Canvas 渲染
+        // setFontFamily 对相同值会直接 return，必须先改成别的族再改回来才会触发重新度量
+        if (document.fonts && !document.fonts.check('14px "Press Start 2P"')) {
+            document.fonts.load('14px "Press Start 2P"').then(() => {
+                if (!this.scene.isActive()) return;
+                const pxTexts = [hudLevelText, hudCityText, hudYearText, this.hudCountText]
+                    .concat(this.npcs.map(n => n.exclaim));
+                pxTexts.forEach(t => {
+                    if (!t) return;
+                    t.setFontFamily('monospace');
+                    t.setFontFamily('"Press Start 2P"');
+                });
+            }).catch(() => {});
+        }
         // Home 按钮（使用 DOM 层，与菜单 Home 统一设计）
         const gameHomeContainer = document.getElementById('game-home-container');
         const gameHomeBtn = document.getElementById('game-home-btn');
@@ -363,23 +381,30 @@ export default class LevelScene extends Phaser.Scene {
 
     // ── hitBlock(player, block) ───────────────────
     hitBlock(player, block) {
-        // 1. 标记收集
+        // 1. 停止原有的循环浮动动画，避免动画打架冲突
+        this.tweens.killTweensOf(block);
+
+        // 2. 标记收集
         block.setData('collected', true);
         
-        // 2. UI 更新
+        // 3. UI 更新
         this.collected++;
         this.hudCountText.setText(`Collected: ${this.collected}/${this.totalBlocks}`);
 
-        // 3. 方块变暗表示已触碰（不销毁）
+        // 4. 方块被顶反馈动画（向上弹跳 8px 然后回落变暗）
         this.tweens.add({
             targets: block,
             y: block.y - 8,
             duration: 120,
             yoyo: true,
             ease: 'Power1',
+            onUpdate: () => {
+                block.body.updateFromGameObject();
+            },
             onComplete: () => {
                 block.setTint(0x444444);
                 block.setAlpha(0.45);
+                block.body.updateFromGameObject();
             }
         });
 
