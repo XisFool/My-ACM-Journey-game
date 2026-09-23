@@ -9,11 +9,11 @@ export default class BootScene extends Phaser.Scene {
 
     preload() {
         // --- 只加载 MenuScene 和骨骼必需的极少量资源 ---
-        this.load.spritesheet('player_r', 'js/Photo/Qiu/Qiu_R.png', {
+        this.load.spritesheet('player_r', 'js/Photo/Qiu/Qiu_R.png?v=3', {
             frameWidth: 230,
             frameHeight: 410,
         });
-        this.load.spritesheet('player_l', 'js/Photo/Qiu/Qiu_L.png', {
+        this.load.spritesheet('player_l', 'js/Photo/Qiu/Qiu_L.png?v=3', {
             frameWidth: 230,
             frameHeight: 410,
         });
@@ -22,7 +22,7 @@ export default class BootScene extends Phaser.Scene {
 
     create() {
         // --- 1. 角色动画注册 ---
-        // 右方向：帧 0 = 站立，帧 1-5 = 走动
+        // 右方向：帧 0 = 站立，帧 1-4 = 走动（4 帧自然大步走）
         this.anims.create({
             key: 'idle_r',
             frames: this.anims.generateFrameNumbers('player_r', { start: 0, end: 0 }),
@@ -31,11 +31,11 @@ export default class BootScene extends Phaser.Scene {
         });
         this.anims.create({
             key: 'walk_r',
-            frames: this.anims.generateFrameNumbers('player_r', { start: 1, end: 5 }),
+            frames: this.anims.generateFrameNumbers('player_r', { start: 1, end: 4 }),
             frameRate: 6,
             repeat: -1,
         });
-        // 左方向：帧 0 = 站立，帧 1-5 = 走动
+        // 左方向：帧 0 = 站立，帧 1-4 = 走动（4 帧自然大步走）
         this.anims.create({
             key: 'idle_l',
             frames: this.anims.generateFrameNumbers('player_l', { start: 0, end: 0 }),
@@ -44,7 +44,7 @@ export default class BootScene extends Phaser.Scene {
         });
         this.anims.create({
             key: 'walk_l',
-            frames: this.anims.generateFrameNumbers('player_l', { start: 1, end: 5 }),
+            frames: this.anims.generateFrameNumbers('player_l', { start: 1, end: 4 }),
             frameRate: 6,
             repeat: -1,
         });
