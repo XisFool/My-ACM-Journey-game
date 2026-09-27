@@ -33,7 +33,7 @@ export default class MenuScene extends Phaser.Scene {
             overlay.style.display = '';
         }
 
-        // ★ 暴露自身引用到全局，让 inline script 可以调用 _hideOverlayAndGo
+        // ★ 暴露自身引用到全局，供 MenuController 调用 _hideOverlayAndGo
         window._menuSceneRef = this;
 
         // 如果用户在 Phaser 加载期间已经点击过按钮，
@@ -46,7 +46,7 @@ export default class MenuScene extends Phaser.Scene {
         }
 
         // 仅绑定一次 DOM 事件（防止重复绑定）— 仅绑定 Home 按钮
-        // Press Start / Continue 已经在 index.html inline script 中立即绑定
+        // Press Start / Continue 由 MenuController 统一调度
         if (!this._domBound) {
             this._domBound = true;
 

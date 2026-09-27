@@ -24,7 +24,7 @@
 }
 
 /* 黑夜模式 */
-.profile-overlay.night, #project-overlay.night {
+.profile-overlay.night {
     --da-bg: #0a0e14;
     --da-border: rgba(0, 243, 255, 0.2);
     --da-border-hover: rgba(0, 243, 255, 0.5);

@@ -63,10 +63,10 @@ my-acm-journey/
 
 按下面 4 步走，避免破坏现有面板：
 
-1. **加 DOM 容器**：在 `index.html` 的 `.home-container` 中新增按钮（参考 `#menu-profile-btn` / `#menu-project-btn`），并在 body 末尾加空容器 `<div id="xxx-overlay" class="hidden"></div>`。
-2. **加样式**：在 `styles/` 下新建 `xxx.css`，并在 `style.css` 末尾追加 `@import url('styles/xxx.css');`。z-index 须遵守 `AGENTS.md §6` 的层级表。
+1. **加 DOM 容器**：在 `index.html` 的 `.home-container` 中新增按钮（参考 `#menu-profile-btn` / `#menu-project-btn`），并在 `<body>` 末尾添加空遮罩容器 `<div id="xxx-overlay" class="hidden"></div>`。
+2. **加样式**：在 `styles/` 下新建 `xxx.css`，并在 `style.css` 末尾追加 `@import url('styles/xxx.css');`。z-index 须遵守 `AGENTS.md §3.1` 的层级表。
 3. **加内容模块**（动态 DOM）：在 `js/ui/` 下新建 `XxxPanel.js`，导出 `mountXxx(overlayEl)`；面板内容写成数据 + 模板字面量，参考 `ProfilePanel.js`。
-4. **接入 MenuController**：在 `MenuController.js` 中新增 `initXxxPanel()`，先调用 `const { closeBtn } = mountXxx(overlayEl)` 挂载 DOM 并捕获返回的关闭按钮，再调用 `createPanel({ overlayEl, openBtn, closeBtn, onOpen, onClose, clickOverlayToClose: true })`，并在文件底部 `init...()` 序列里调用一次。若面板位于 `#menu-overlay` 外层，需同步添加日夜主题类名切换逻辑。
+4. **接入 MenuController**：在 `MenuController.js` 中新增 `initXxxPanel()`，先调用 `const { closeBtn } = mountXxx(overlayEl)` 挂载 DOM 并捕获返回的关闭按钮，再调用 `createPanel({ overlayEl, openBtn, closeBtn, onOpen, onClose, clickOverlayToClose: true })`，并在文件底部 `init...()` 序列里调用一次。独立于 `#menu-overlay` 的面板需同步添加日夜主题类名切换逻辑。
 
 ## 开发约定
 
@@ -74,12 +74,14 @@ my-acm-journey/
 - **资源加载**：新资源必须经 `AssetHelper` 收集排队；背景图创建前调用 `textures.exists()` 安全检查；NPC 资源用 `getNpcAssetKey` / `getNpcAnimKey` 命名空间。
 - **主菜单布局**：字号、间距、按钮尺寸均冻结，允许改色/发光/字体。
 - **主题切换**：支持日夜两种模式，三套 Token 变量域 (`--th-*` 主菜单/通用、`--da-*` Profile、`--pj-*` Project 3D)，`localStorage('acm-theme')` 持久化。
-- **z-index 层级**：见 `AGENTS.md §6`。
+- **z-index 层级**：见 `AGENTS.md §3.1`。
 
 ## 文档
 
 - `AGENTS.md` —— 面向 AI Agent 的上下文速查（架构 / 子系统 / 边界），改动前先读
 
-## License
+## 开源协议与版权声明 (License)
 
-个人项目，所有资源（图片 / 文字 / 音频）版权归原作者，未经允许请勿商用。
+- **源代码**: 遵循 [MIT License](package.json) 开源许可，欢迎学习与架构参考。
+- **个人素材与传记内容**: 项目中包含作者本人的肖像、真实竞赛历程回忆图文（`js/Photo/*_memo/` 及头像）与个人文字记录，版权归原作者独立所有，**严禁未经授权用于任何商业用途或二次打包发布**。
+- **第三方同人/素材声明**: 游戏中引用的特定同人角色与背景音频（如星之卡比素材、Minecraft 背景音效等）版权归原版权方所有，仅作为非盈利个人传记游戏的氛围呈现，遵循合理使用原则。
