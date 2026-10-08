@@ -21,13 +21,13 @@ const PROFILE_DATA = {
     ],
     hobbies: ['足球', 'Vibe Coding', 'XCPC', 'CS2'],
     awards: [
-        { name: 'CCPC 重庆区域赛 铜奖',                year: '2024' },
-        { name: 'CCPC福建邀请赛 铜奖',                  year: '2024' },
-        { name: 'ICPC 江西省赛 银奖',                  year: '2024' },
-        { name: '睿抗机器人开发者大赛 全国一等奖',     year: '2024' },
-        { name: '第十五届蓝桥杯 C/C++ B组 全国一等奖', year: '2025' },
-        { name: '百度之星程序设计大赛 初赛银奖',        year: '2024' },
-        { name: '程序设计天梯赛 国家二等奖',            year: '2026' },
+        { name: 'CCPC 重庆区域赛 铜奖',                year: '2024', image: 'js/Photo/Awards/2024_ccpc_chongqing.webp' },
+        { name: 'CCPC福建邀请赛 铜奖',                  year: '2024', image: 'js/Photo/Awards/2024_ccpc_fuzhou.webp' },
+        { name: 'ICPC 江西省赛 银奖',                  year: '2024', image: 'js/Photo/Awards/2024_icpc_jiangxi.webp' },
+        { name: '睿抗机器人开发者大赛 全国一等奖',     year: '2024', image: 'js/Photo/Awards/2024_raicom_final.webp' },
+        { name: '第十六届蓝桥杯 C/C++ B组 全国一等奖', year: '2025', image: 'js/Photo/Awards/2025_lanqiao_national.webp' },
+        { name: '百度之星程序设计大赛 初赛银奖',        year: '2024', image: 'js/Photo/Awards/2024_baidu_star.webp' },
+        { name: '程序设计天梯赛 国家二等奖',            year: '2026', image: 'js/Photo/Awards/2026_gplt_individual.webp' },
     ],
 };
 
@@ -53,9 +53,9 @@ function renderEducationItem(item) {
     `;
 }
 
-function renderAwardItem(item) {
+function renderAwardItem(item, idx) {
     return `
-        <div class="profile-award-item">
+        <div class="profile-award-item" data-award-idx="${idx}">
             <i class="fa-solid fa-trophy"></i>
             <span class="profile-award-name">${escapeHtml(item.name)}</span>
             <span class="profile-award-year">${escapeHtml(item.year)}</span>
@@ -98,22 +98,43 @@ function buildPanelHTML(data) {
                 </div>
 
                 <div class="profile-divider" style="margin-top: 20px;"><span>Competitive Record</span></div>
-                <div class="profile-awards">
-                    ${data.awards.map(renderAwardItem).join('')}
+                <div class="profile-awards profile-awards-competitive">
+                    ${data.awards.map((item, idx) => renderAwardItem(item, idx)).join('')}
                 </div>
+            </div>
+        </div>
+        <div class="profile-award-preview" id="profile-award-preview" aria-hidden="true">
+            <div class="profile-preview-badge">
+                <div class="profile-preview-badge-left">
+                    <i class="fa-solid fa-award"></i>
+                    <span class="profile-preview-title" id="profile-preview-title"></span>
+                </div>
+                <span class="profile-preview-year" id="profile-preview-year"></span>
+            </div>
+            <div class="profile-preview-image-box">
+                <img class="profile-preview-img" id="profile-preview-img-1" alt="获奖证书预览" />
+                <img class="profile-preview-img" id="profile-preview-img-2" alt="获奖证书预览" />
             </div>
         </div>
     `;
 }
 
 /**
- * 把 Profile DOM 挂载到给定的 overlay 容器中，绑定 QQ 复制按钮。
+ * 把 Profile DOM 挂载到给定的 overlay 容器中，绑定 QQ 复制与证书悬浮联动预览。
  * @param {HTMLElement} overlayEl  #profile-overlay
  * @returns {{ closeBtn: HTMLElement|null }} 返回内部需要 PanelManager 绑定的 closeBtn 引用
  */
 export function mountProfile(overlayEl) {
     if (!overlayEl) return { closeBtn: null };
     overlayEl.innerHTML = buildPanelHTML(PROFILE_DATA);
+
+    // 预热 7 张 WebP 证书图片至浏览器缓存
+    PROFILE_DATA.awards.forEach((item) => {
+        if (item.image) {
+            const preloadImg = new Image();
+            preloadImg.src = item.image;
+        }
+    });
 
     const copyBtn = overlayEl.querySelector('#profile-copy-qq');
     if (copyBtn) {
@@ -125,8 +146,130 @@ export function mountProfile(overlayEl) {
         });
     }
 
+    // 联动预览控制器
+    const panelEl = overlayEl.querySelector('.profile-panel');
+    const previewEl = overlayEl.querySelector('#profile-award-preview');
+    const titleEl = overlayEl.querySelector('#profile-preview-title');
+    const yearEl = overlayEl.querySelector('#profile-preview-year');
+    const imgEl1 = overlayEl.querySelector('#profile-preview-img-1');
+    const imgEl2 = overlayEl.querySelector('#profile-preview-img-2');
+    const awardItems = overlayEl.querySelectorAll('.profile-award-item[data-award-idx]');
+
+    let hideTimer = null;
+    let currentIdx = -1;
+    let activeSlot = 0; // 0: imgEl1, 1: imgEl2
+
+    function cancelHide() {
+        if (hideTimer) {
+            clearTimeout(hideTimer);
+            hideTimer = null;
+        }
+    }
+
+    function hidePreview() {
+        cancelHide();
+        currentIdx = -1;
+        if (panelEl) panelEl.classList.remove('preview-active');
+        if (previewEl) {
+            previewEl.classList.remove('active');
+            previewEl.setAttribute('aria-hidden', 'true');
+        }
+        awardItems.forEach((item) => item.classList.remove('preview-selected'));
+    }
+
+    function scheduleHide() {
+        cancelHide();
+        hideTimer = setTimeout(() => {
+            hidePreview();
+        }, 120);
+    }
+
+    function showAward(idx) {
+        cancelHide();
+        if (idx === currentIdx) return;
+        const award = PROFILE_DATA.awards[idx];
+        if (!award || !award.image) return;
+
+        currentIdx = idx;
+
+        // 激活面板左移与预览卡片浮现
+        if (panelEl) panelEl.classList.add('preview-active');
+        if (previewEl) {
+            previewEl.classList.add('active');
+            previewEl.setAttribute('aria-hidden', 'false');
+        }
+
+        // 高亮当前选中的奖项条目
+        awardItems.forEach((item) => {
+            const itemIdx = parseInt(item.dataset.awardIdx, 10);
+            item.classList.toggle('preview-selected', itemIdx === idx);
+        });
+
+        // 更新徽章铭牌文案
+        if (titleEl) titleEl.textContent = award.name;
+        if (yearEl) yearEl.textContent = award.year;
+
+        // 双图平滑 Cross-fade 切换
+        const activeImg = activeSlot === 0 ? imgEl1 : imgEl2;
+        const nextImg = activeSlot === 0 ? imgEl2 : imgEl1;
+
+        if (!activeImg.classList.contains('visible') && !nextImg.classList.contains('visible')) {
+            // 首次展示
+            imgEl1.src = award.image;
+            imgEl1.classList.add('visible');
+            activeSlot = 0;
+        } else {
+            // 交叉淡入淡出
+            nextImg.src = award.image;
+            nextImg.classList.add('visible');
+            activeImg.classList.remove('visible');
+            activeSlot = 1 - activeSlot;
+        }
+    }
+
+    // 绑定奖项列表交互事件
+    awardItems.forEach((item) => {
+        const idx = parseInt(item.dataset.awardIdx, 10);
+        item.addEventListener('mouseenter', () => {
+            showAward(idx);
+        });
+        item.addEventListener('mouseleave', () => {
+            scheduleHide();
+        });
+    });
+
+    // 悬停在预览相框本体时保持显示，移出时触发防抖隐藏
+    if (previewEl) {
+        previewEl.addEventListener('mouseenter', () => {
+            cancelHide();
+        });
+        previewEl.addEventListener('mouseleave', () => {
+            scheduleHide();
+        });
+    }
+
+    // 监听 overlay 关闭或遮罩点击，立即清理状态与定时器
+    const closeBtn = overlayEl.querySelector('#profile-close-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', hidePreview);
+    }
+    overlayEl.addEventListener('click', (e) => {
+        if (e.target === overlayEl) hidePreview();
+    });
+
+    const observer = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+            if (m.type === 'attributes' && m.attributeName === 'class') {
+                if (overlayEl.classList.contains('closing') || overlayEl.classList.contains('hidden')) {
+                    hidePreview();
+                }
+            }
+        }
+    });
+    observer.observe(overlayEl, { attributes: true, attributeFilter: ['class'] });
+
     return {
-        closeBtn: overlayEl.querySelector('#profile-close-btn'),
+        closeBtn,
     };
 }
 
