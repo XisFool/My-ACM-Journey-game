@@ -20,6 +20,13 @@
     pointer-events: none;
 }
 
+/* 字体就绪门禁：在核心字体未就绪的极短瞬间（本地通常 <10ms）静默等待，消除 FOUT 闪烁 */
+html.fonts-loading #menu-overlay {
+    opacity: 0;
+    pointer-events: none;
+}
+
+
 .glass-container {
     background-color: var(--th-container-bg);
     height: 82.8vh;
