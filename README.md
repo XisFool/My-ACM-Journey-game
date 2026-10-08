@@ -26,7 +26,7 @@ npm run dev
 
 - Phaser 3.60（本地 `js/libs/phaser.min.js`，CDN 备用）
 - 原生 HTML / CSS / JS（ES Modules）
-- Font Awesome + Google Fonts（Orbitron / Outfit / Noto Sans SC / Press Start 2P，国内镜像加速）
+- 本地艺术字体（Orbitron / Press Start 2P / Outfit WOFF2）+ 中文字体镜像（Noto Sans SC）+ Font Awesome 图标
 
 ## 目录结构
 
@@ -34,8 +34,13 @@ npm run dev
 my-acm-journey/
 ├── index.html                 # DOM 骨架 + script 入口（不含业务 JS）
 ├── package.json               # 项目元信息与快捷启动脚本（npm run dev）
+├── fonts/                     # 本地核心艺术字体（WOFF2）
+│   ├── orbitron-variable.woff2
+│   ├── outfit-latin.woff2
+│   └── press-start-2p-latin.woff2
 ├── style.css                  # @import 聚合入口（仅聚合本地模块）
 ├── styles/                    # 按职责拆分的样式
+│   ├── fonts.css              #   本地核心字体定义 (@font-face)
 │   ├── base.css               #   全局 reset + 主题 Token (--th-*)
 │   ├── menu.css               #   主菜单 #menu-overlay 与按钮
 │   ├── profile.css            #   Profile 面板 (--da-* + .profile-overlay)
@@ -55,7 +60,7 @@ my-acm-journey/
 │   ├── utils/AssetHelper.js   # 资源收集 / 排队 / NPC 命名空间 / DOM 图重试缓存
 │   ├── libs/phaser.min.js
 │   ├── Audio/                 # MC.mp3 / wuxian_jinbu.mp3
-│   └── Photo/                 # Background / Qiu / Other_character / Projects / *_memo
+│   └── Photo/                 # Background / Qiu / Other_character / Projects / Awards / *_memo
 └── AGENTS.md                  # 面向 AI Agent 的上下文速查
 ```
 
@@ -83,5 +88,5 @@ my-acm-journey/
 ## 开源协议与版权声明 (License)
 
 - **源代码**: 遵循 [MIT License](package.json) 开源许可，欢迎学习与架构参考。
-- **个人素材与传记内容**: 项目中包含作者本人的肖像、真实竞赛历程回忆图文（`js/Photo/*_memo/` 及头像）与个人文字记录，版权归原作者独立所有，**严禁未经授权用于任何商业用途或二次打包发布**。
+- **个人素材与传记内容**: 项目中包含作者本人的肖像、真实竞赛历程回忆图文（`js/Photo/*_memo/`、`js/Photo/Awards/` 及头像）与个人文字记录，版权归原作者独立所有，**严禁未经授权用于任何商业用途或二次打包发布**。
 - **第三方同人/素材声明**: 游戏中引用的特定同人角色与背景音频（如星之卡比素材、Minecraft 背景音效等）版权归原版权方所有，仅作为非盈利个人传记游戏的氛围呈现，遵循合理使用原则。

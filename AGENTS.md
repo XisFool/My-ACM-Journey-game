@@ -10,7 +10,7 @@
 - **定位**: 像素风 2D 横版传记游戏，记录作者 ACM/XCPC 竞赛历程。4 座城市关卡（南昌→深圳→桂林→重庆）。
 - **技术栈**: Phaser 3.60 + 原生 HTML5/CSS3/JavaScript (ES Modules)，无打包构建步骤。
 - **画布规格**: 960×540，Arcade 物理，`Phaser.Scale.ENVELOP` 智能居中自适应。
-- **路径不可变契约**: `js/Photo/` 与 `js/Audio/` 路径在多处代码硬编码，严禁重命名或移动目录。特别注意背景图历史拼写：深圳为 `ShenZheng.webp`（带 g），重庆为 `ChongQin.webp`（少 g），切勿擅自修改防 404。
+- **路径不可变契约**: `fonts/`、`js/Photo/`（含 `Awards/`）与 `js/Audio/` 路径在多处代码硬编码，严禁重命名或移动目录。特别注意背景图历史拼写：深圳为 `ShenZheng.webp`（带 g），重庆为 `ChongQin.webp`（少 g），切勿擅自修改防 404。
 
 ### 场景生命周期流转
 ```
@@ -53,9 +53,11 @@ BootScene (纹理/动画生成) ──→ MenuScene (DOM主菜单) ──→ Loa
 - key 格式为 `bgm:${path}`，通过 Phaser 全局 `registry` 共享 `_bgmKey` 和 `_bgmObj`。
 - 跨关同曲不重启；切关换曲 stop 旧播新；回菜单或通关 screen 点击时 stopAll + 清空 registry；缺失时静默降级。
 
-### 2.5 字体系统与 Canvas 文本渲染
-- **字体族**: HUD 像素字 `'Press Start 2P'`、科技主标题 `'Orbitron'`、通用无衬线 `'Outfit'`、中文字体 `'Noto Sans SC'`；剧情弹窗与通关页统一采用复古等宽字体 `'Courier New', Courier, monospace`。
-- **启动门禁**: `main.js` 启动前通过 `document.fonts.load` 预热像素字体，配合 `Promise.race` + 3.5s 超时兜底与 `.catch(launch)` 容灾。
+### 2.5 字体系统与渲染门禁
+- **字体资产与本地化**: 核心艺术字体（HUD 像素字 `'Press Start 2P'`、科技主标题 `'Orbitron'`、通用无衬线 `'Outfit'`）已全部本地化为 WOFF2 存于 `fonts/` 目录，由 `styles/fonts.css` 声明，首要保证主界面与游戏内零延迟；中文使用 `'Noto Sans SC'`（国内镜像按需加载）；剧情弹窗与通关页统一采用复古等宽字体 `'Courier New', Courier, monospace`。
+- **两级字体门禁**:
+  1. **DOM 级门禁 (`index.html`)**: `<link rel="preload">` 预加载核心字体，配合 Promise + 300ms 快速超时（切换 `fonts-loading` / `fonts-ready` class 并隐形预度量），防止主界面 FOUT 文本闪烁。
+  2. **Canvas 级门禁 (`main.js`)**: 启动 Phaser 前通过 `document.fonts.load('14px "Press Start 2P"')` 预热像素字体，配合 `Promise.race` + 3.5s 超时兜底与 `.catch(launch)` 容灾。
 - **两步切换重绘**: Phaser `TextStyle.setFontFamily(t)` 传相同值为空操作。弱网下字体延迟就绪后触发重绘，必须先设为临时族（如 `'monospace'`）再设回 `'"Press Start 2P"'` 才能强制重新度量文本宽度（涵盖 4 个 HUD 文本 + NPC 提示）。
 
 ---
@@ -68,7 +70,7 @@ BootScene (纹理/动画生成) ──→ MenuScene (DOM主菜单) ──→ Loa
 |---|---|---|
 | **1100** | `#end-screen` | 终章通关画面（动态 DOM，带重试与图片防竞态） |
 | **1000** | `#memory-modal` | 剧情图文弹窗（Promise 加载状态机与防竞态） |
-| **800** | `.profile-overlay` | 个人 Profile 面板（动态挂载） |
+| **800** | `.profile-overlay` | 个人 Profile 面板（动态挂载；内部含 820/850 局部证书预览卡片） |
 | **600** | `#project-overlay` | 3D Intro 全屏项目页（动态构建） |
 | **500** | `#menu-overlay` | 主菜单界面 |
 | **400** | `.game-home-container` | 游戏内 Home 悬浮按钮 |
@@ -81,7 +83,7 @@ BootScene (纹理/动画生成) ──→ MenuScene (DOM主菜单) ──→ Loa
   - `--da-*`: Profile 面板专用（`profile.css`）。
   - `--pj-*`: Project 3D 面板专用（`project.css`）。
 - **主题持久化**: 存储于 `localStorage('acm-theme')`（`day` / `night`）。
-- **样式入口纯度**: `style.css` 仅保留 `@import url('styles/*.css')` 聚合；禁止在入口书写样式规则；所有外部字体/图标统一在 `index.html` 引入。
+- **样式入口纯度**: `style.css` 仅保留 `@import url('styles/*.css')` 聚合（`fonts.css` 严格置顶）；禁止在入口书写样式规则；外部中文字体与图标在 `index.html` 引入。
 - **事件交互收敛**: 菜单与面板交互逻辑一律进 `js/ui/MenuController.js` 或对应 UI 模块，严禁在 `index.html` 插入业务脚本。按钮 Hover 标签纯由 CSS 驱动。
 
 ### 3.3 Project 3D Intro 契约 (ProjectPage.js)
