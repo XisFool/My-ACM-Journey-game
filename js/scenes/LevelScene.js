@@ -2,6 +2,7 @@
    LevelScene.js — 核心游戏场景
    ============================================ */
 import { STORY } from '../story.js';
+import { createCityAtmosphere } from '../utils/CityAtmosphere.js';
 import { clearPreloadedImages, collectLevelAssets, getNpcAnimKey, getNpcAssetKey, isLevelPreheated, markLevelPreheated, preloadImage, preloadMemoryImages, queueAssets, retryPreloadedImage } from '../utils/AssetHelper.js';
 
 const CFG = {
@@ -36,6 +37,7 @@ export default class LevelScene extends Phaser.Scene {
         this.foregroundImage = null;
         this.playerShadow = null;
         this.playerContactShadow = null;
+        this.cityAtmosphere = null;
     }
 
     // ── preload() ────────────────────────────────
@@ -352,6 +354,8 @@ export default class LevelScene extends Phaser.Scene {
         if (this.levelData.particle) {
             this._createParticles();
         }
+
+        this.cityAtmosphere = createCityAtmosphere(this);
 
         // 淡入（黑→透明，与 fadeOut 对齐；避免把整个 hex 当 red 通道传导致红屏）
         this.cameras.main.fadeIn(500, 0, 0, 0);
