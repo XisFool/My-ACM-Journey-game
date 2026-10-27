@@ -90,6 +90,7 @@ export const STORY = {
       year: "2023",
       mission: "第一块属于我的ACM牌子",
       bgImage: "js/Photo/Background/ShenZheng.webp",
+      foregroundImage: "js/Photo/Background/ShenZheng_foreground.png",
       bgMusic: "js/Audio/MC.mp3",
       bgColor: "#1a2a3a",
       groundColor: "#1c1c1c",
