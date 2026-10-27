@@ -4,25 +4,29 @@
 
 const PROJECTS_DATA = [
     {
-        title: 'My ACM Journey · 像素传记游戏',
-        tags: ['Phaser 3', 'HTML / CSS / JS', 'ES Modules', '像素美术'],
-        desc: '像素风 2D 横版传记游戏，记录我的 ACM/XCPC 竞赛之路。4 座城市关卡（南昌 → 深圳 → 桂林 → 重庆），玩家跳跃收集问号方块触发图文剧情弹窗。自研 AssetHelper 统一资源预热、LoadingScene 进度条、日夜主题切换与剧情图缓存复用。',
+        title: 'dsh-TUI · DeepSeek Harness 交互式终端应用',
+        tags: ['TypeScript', 'DeepSeek Harness', 'Terminal UI', 'Node.js', 'Pixel Art'],
+        desc: '面向 DeepSeek Harness 的交互式终端界面，获官方首推收录并登上 GitHub Trending 日榜。内置像素鲸鱼动画交互、实时状态行、思考流式展开、双击 Esc 时间回溯与上下文容量指示，以零核心侵入架构带来极致流畅的终端交互体验。',
+        year: '2026',
+        image: 'js/Photo/Projects/dsh-tui-preview.svg',
+        fit: 'contain',
+        bg: '#000000',
+    },
+    {
+        title: 'My ACM Journey · 算法竞赛像素传记游戏',
+        tags: ['Phaser 3', 'HTML5 Canvas', 'ES Modules', 'Arcade 物理', '像素传记'],
+        desc: '像素风 2D 横版传记游戏，沉浸式记录 ACM/XCPC 竞赛与成长之路。包含南昌至重庆 4 座城市关卡，支持跳跃顶块触发剧情弹窗与 NPC 对话。基于 Phaser 3 与原生 ES Modules 构建，集成资源预热状态机、日夜主题与 3D 项目展台。',
         year: '2026',
         image: 'js/Photo/Projects/01.webp',
     },
     {
-        title: 'Gemini LiveScreen · 桌面级 AI 屏幕语音助手',
-        tags: ['Electron', 'Gemini Live API', 'Node.js', 'WebSocket', 'Clay 3D 美学'],
-        desc: '基于 Gemini Live API 的原生 Electron 桌面级实时屏幕与语音辅导助手。实现 1fps 屏幕高质量采样与 16000Hz PCM 音频流低延迟传输，支持即时打断机制（Barge-in）。具备系统代理自动提取、协议智能 Fallback、一键连通性测试以及自适应代理一键更新。主界面采用 Clay 3D 粘土风格微质感与磨砂亚克力设计，融合极窄自适应悬浮小窗，保障本地 API Key 硬件级 safeStorage 安全存储。',
+        title: 'CodeBuddy HUD · 终端状态栏看板与插件',
+        tags: ['Node.js', 'StatusLine HUD', 'ANSI / TUI', 'Token Tracker', '零依赖'],
+        desc: '面向 CodeBuddy Code 的终端状态栏看板插件，带来类似 Claude Code cc-hud 的实时监控体验。以严格 ≤3 行 ANSI 高度动态展示模型档位、Git 变更、上下文 Token 进度条、消费 Credits 与工具活动。纯 Node.js 零 npm 依赖，支持双编码自适应。',
         year: '2026',
-        image: 'js/Photo/Projects/02.png',
-    },
-    {
-        title: 'Law-Bot · 法律法规智能问答',
-        tags: ['LangChain', 'Hybrid RAG', 'FastAPI + SSE', 'Next.js 14'],
-        desc: '覆盖《劳动法》《劳动合同法》《治安管理处罚法》的 RAG 问答助手。法条级切分 + Chroma MMR + BM25(jieba) + RRF 融合 + Qwen Rerank，答案强制标注法条编号并聚合引用卡片，低相关度自动走 Tavily 联网兜底，FastAPI SSE 流式输出。',
-        year: '2026',
-        image: 'js/Photo/Projects/03.webp',
+        image: 'js/Photo/Projects/codebuddy-hud-preview.svg',
+        fit: 'contain',
+        bg: '#181825',
     },
 ];
 
@@ -109,10 +113,12 @@ function buildProjectCard(p, idx) {
     const imgWrap = document.createElement('div');
     imgWrap.className = 'pj-card-img';
     imgWrap.style.transform = 'translateZ(20px)';
+    if (p.bg) imgWrap.style.background = p.bg;
     const img = document.createElement('img');
     img.src = p.image;
     img.alt = p.title;
     img.loading = 'lazy';
+    if (p.fit) img.style.objectFit = p.fit;
     imgWrap.appendChild(img);
 
     card.appendChild(content);
