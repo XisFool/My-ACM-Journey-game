@@ -156,6 +156,7 @@ export default class LevelScene extends Phaser.Scene {
             const by = CFG.H - CFG.GROUND_H - 100 - Phaser.Math.Between(0, 21);
 
             const block = this.blocks.create(bx, by, 'qblock');
+            block.setDepth(30); // 交互方块始终位于场景前景、氛围和 NPC 上方。
             block.setData('memories', blockData.memories);
             block.setData('collected', false);
 
@@ -448,7 +449,7 @@ export default class LevelScene extends Phaser.Scene {
             lifespan: 420,
             quantity: 10,
             emitting: false,
-        });
+        }).setDepth(block.depth - 1);
         burst.explode(10);
         this.time.delayedCall(500, () => burst.destroy());
 
