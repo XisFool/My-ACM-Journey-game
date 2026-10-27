@@ -76,7 +76,9 @@ my-acm-journey/
 ## 开发约定
 
 - **资源路径**：所有 `js/Photo/...`、`js/Audio/...` 路径被 `story.js`、`BootScene`、`ProjectPage` 多处直接引用，**不要随意重命名或移动**。
-- **资源加载**：新资源必须经 `AssetHelper` 收集排队；背景图创建前调用 `textures.exists()` 安全检查；NPC 资源用 `getNpcAssetKey` / `getNpcAnimKey` 命名空间。
+- **资源加载**：新资源必须经 `AssetHelper` 收集排队；背景与前景创建前调用 `textures.exists()` 安全检查；NPC 资源用 `getNpcAssetKey` / `getNpcAnimKey` 命名空间。前景在 `story.js` 对应关卡的 `foregroundImage` 中配置，缺图时跳过前景层并继续使用背景和可玩场景。
+- **场景前景**：前景 PNG 应与背景使用相同画布尺寸和坐标系，只提取需要遮挡玩家的近景像素并保留透明区域。运行时复用背景的位置、缩放与 `BG_SCROLL`，绘制深度为 1（玩家为 0、HUD 为 20），不添加物理碰撞；双层地面阴影深度为 -1，通过场景唯一的 `postupdate` 监听更新，并在 `shutdown` 解除监听。
+- **当前方案边界**：四站前景使用与原图配准的透明图层和背景相同的滚动系数；没有独立前景视差，也没有重建原图道路或地面的透视关系。调整前景范围时保留原底图与游戏物理。
 - **主菜单布局**：字号、间距、按钮尺寸均冻结，允许改色/发光/字体。
 - **主题切换**：支持日夜两种模式，三套 Token 变量域 (`--th-*` 主菜单/通用、`--da-*` Profile、`--pj-*` Project 3D)，`localStorage('acm-theme')` 持久化。
 - **z-index 层级**：见 `AGENTS.md §3.1`。

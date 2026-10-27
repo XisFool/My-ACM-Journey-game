@@ -26,10 +26,12 @@ BootScene (纹理/动画生成) ──→ MenuScene (DOM主菜单) ──→ Loa
 
 ### 2.1 资源加载与预热 (AssetHelper.js)
 1. **当前关初始 (LevelScene.create)**: 零延迟触发当前关 DOM 剧情图后台异步预热 (`preloadMemoryImages`)。
-2. **主加载 (LoadingScene.preload)**: Phaser 层加载当前关 bg/bgm/npc，按排队数动态展示 260/520/900ms 最小时长，监听 `FILE_LOAD_ERROR` 记录异常。
-3. **后台预热 (LevelScene._preloadBackgroundAssets)**: 进关 1.5s 后静默预热下一关 DOM 剧情图与 Phaser 资源（末关预热 GameOver 图）。
-4. **Fallback 降级**: 背景图缺失回退纯色占位与渐变；BGM 缺失跳过播放并清理 registry；NPC 缺失直接跳过该精灵生成。加载失败严禁阻塞进关。
+2. **主加载 (LoadingScene.preload)**: Phaser 层加载当前关 bg/foreground/bgm/npc，按排队数动态展示 260/520/900ms 最小时长，监听 `FILE_LOAD_ERROR` 记录异常。
+3. **后台预热 (LevelScene._preloadBackgroundAssets)**: 进关 1.5s 后静默预热下一关 DOM 剧情图与 Phaser 资源（包括前景；末关预热 GameOver 图）。
+4. **Fallback 降级**: 背景图缺失回退纯色占位与渐变；前景图缺失时跳过前景叠加并保留可玩场景；BGM 缺失跳过播放并清理 registry；NPC 缺失直接跳过该精灵生成。加载失败严禁阻塞进关。
 5. **重试机制**: 图片预热超时 12s，支持 2 次重试（延迟 350ms）。
+
+当前四关的前景路径由 `story.js` 的 `foregroundImage` 配置，经 `AssetHelper` 排队为 `foreground_${lvIdx}`。有背景纹理且关卡声明前景时，前景沿用背景的位置、原点、缩放与滚动系数；前景文件本身加载失败不会阻止游戏，也不会抑制阴影。
 
 ### 2.2 玩家物理与方块交互 (LevelScene.js)
 - **参数矩阵**: 重力 900，跳跃初速度 -340 (固定高度)，Coyote Time 90ms，Jump Buffer 110ms，最大速度 207，水平加速度 ACCEL 1800，阻尼 DRAG 1500。速度 `< 30` 切回 idle。
@@ -43,6 +45,8 @@ BootScene (纹理/动画生成) ──→ MenuScene (DOM主菜单) ──→ Loa
   - 虚空掉落（`y > CFG.H + 200`）与左边界越界：传送回起点 `(100, CFG.H - CFG.GROUND_H - 41)` 并重置速度与镜头。
   - 右边界越界：仅在 `collected < totalBlocks`（未全收集）时重置回起点；方块全收集后右边界放行，允许玩家右行等待 1s 延迟换关。
 - **镜头跟随**: `startFollow(player, true, 0.12, 0.05)`，死区 `setDeadzone(120, 60)`。
+- **前景遮挡与双层地面阴影**: 背景深度 `-100`、外层与接触阴影 `-1`、玩家 `0`、前景 `1`、HUD `20`。前景复用背景变换和 `BG_SCROLL`，不增加碰撞；两层椭圆阴影固定在地面，唯一 `postupdate` 监听根据玩家碰撞盒底部更新水平位置、缩放与透明度，场景 `shutdown` 时解除监听并清空引用。阴影要求背景已创建且该关配置了 `foregroundImage`；前景文件缺失时仍保留阴影。
+- **前景方案边界**: 四站前景 PNG 与原背景使用相同画布坐标（当前为 3200×1344 RGBA），只包含需要压到玩家上方的透明图层。现有方案沿用 `BG_SCROLL = 0.2`，没有为前景单独设置视差，也没有重建底图道路或地面透视。
 
 ### 2.3 NPC 系统
 - 数据配置于 `story.js levels[].npcs[]`（关卡 1 配置 Kirby）。
@@ -106,7 +110,7 @@ BootScene (纹理/动画生成) ──→ MenuScene (DOM主菜单) ──→ Loa
 
 **必须遵守 (Always)**
 - 扩展新面板严格遵守 [README.md](README.md)「如何加新按钮 / 面板」的 4 步规范，并严格对齐 §3.1 z-index 层级。
-- 动态加载 Phaser 资源必须经由 `AssetHelper` 收集排队，背景图创建前执行 `textures.exists()` 检查，并在 `create()` 后手动调用 `load.start()`。
+- 动态加载 Phaser 资源必须经由 `AssetHelper` 收集排队，背景与前景创建前执行 `textures.exists()` 检查，并在 `create()` 后手动调用 `load.start()`。新关卡接入前景时，在 `story.js` 声明 `foregroundImage`，添加与原背景同尺寸、同坐标系的透明 PNG；前景仅承载遮挡像素，缺图必须允许背景与场景继续运行。
 - NPC 纹理与动画必须通过 `getNpcAssetKey` / `getNpcAnimKey` 命名空间隔离。
 - 碰撞与物理判定遵照 12px 顶块容差、下落 2.8g 加速度与弹窗冻结加速度契约。
 

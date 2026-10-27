@@ -20,3 +20,6 @@ Thumbs.db
 # 本地测试与 Scratchpad 目录
 ai_scratchpad/
 .playwright-cli/
+
+# 本地 Agent 审查记录与截图
+/.agent_reports/
