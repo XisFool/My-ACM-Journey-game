@@ -15,6 +15,7 @@ export const STORY = {
 
       // 背景图路径
       bgImage: "js/Photo/Background/NanChang.webp",
+      foregroundImage: "js/Photo/Background/NanChang_foreground.png",
       bgMusic: "js/Audio/MC.mp3",
       // 背景占位颜色（图片未加载时显示）
       bgColor: "#6a8faf",

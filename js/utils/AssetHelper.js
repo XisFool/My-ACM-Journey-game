@@ -33,6 +33,13 @@ export function collectLevelAssets(lvIdx) {
         });
     }
 
+    if (levelData.foregroundImage) {
+        assets.images.push({
+            key: `foreground_${lvIdx}`,
+            path: levelData.foregroundImage,
+        });
+    }
+
     if (levelData.bgMusic) {
         assets.audios.push({
             key: `bgm:${levelData.bgMusic}`,

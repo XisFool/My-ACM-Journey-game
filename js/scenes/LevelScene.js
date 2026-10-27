@@ -32,6 +32,10 @@ export default class LevelScene extends Phaser.Scene {
         this.isPaused = false;
         this.modalOpen = false;
         this.collected = 0;
+        this.bgImage = null;
+        this.foregroundImage = null;
+        this.playerShadow = null;
+        this.playerContactShadow = null;
     }
 
     // ── preload() ────────────────────────────────
@@ -116,6 +120,29 @@ export default class LevelScene extends Phaser.Scene {
         this.player.body.setMaxVelocityX(CFG.PLAYER_SPEED);
         this.facingRight = true;
         this.player.play('idle_r');
+
+        // 前景沿用底图变换：在人物上方重绘原图像素，避免双影。
+        const foregroundKey = `foreground_${this.lvIdx}`;
+        if (this.bgImage && this.levelData.foregroundImage) {
+            if (this.textures.exists(foregroundKey)) {
+                this.foregroundImage = this.add.image(this.bgImage.x, this.bgImage.y, foregroundKey)
+                    .setOrigin(this.bgImage.originX, this.bgImage.originY)
+                    .setScale(this.bgImage.scaleX, this.bgImage.scaleY)
+                    .setScrollFactor(this.bgImage.scrollFactorX, this.bgImage.scrollFactorY)
+                    .setDepth(1);
+            }
+
+            this.playerShadow = this.add.ellipse(this.player.x, groundCol.body.top - 1, 34, 8, 0x253128, 0.14)
+                .setDepth(-1);
+            this.playerContactShadow = this.add.ellipse(this.player.x, groundCol.body.top - 1, 20, 4, 0x202b22, 0.25)
+                .setDepth(-1);
+            this.events.on('postupdate', this._updatePlayerShadow, this);
+            this.events.once('shutdown', () => {
+                this.events.off('postupdate', this._updatePlayerShadow, this);
+                this.playerShadow = null;
+                this.playerContactShadow = null;
+            });
+        }
 
         // 5. 方块
         this.blocks = this.physics.add.staticGroup();
@@ -628,6 +655,18 @@ export default class LevelScene extends Phaser.Scene {
 
         // NPC 近距离检测
         this._updateNPCs(delta);
+    }
+
+    // 阴影留在地面，随离地高度缩小、淡出；弹窗期间也跟随物理位置。
+    _updatePlayerShadow() {
+        const height = Math.max(0, this.playerShadow.y + 1 - this.player.body.bottom);
+        const lift = Phaser.Math.SmoothStep(height, 0, 100);
+        this.playerShadow.setX(this.player.body.center.x)
+            .setScale(1 - lift * 0.25, 1 - lift * 0.5)
+            .setAlpha(1 - lift * 0.55);
+        this.playerContactShadow.setX(this.player.body.center.x)
+            .setScale(1 - lift * 0.45, 1 - lift * 0.3)
+            .setAlpha((1 - lift) ** 2);
     }
 
     // ── 跳跃/落地尘土粒子 ───────────────────────────
