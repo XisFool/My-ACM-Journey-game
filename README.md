@@ -57,7 +57,9 @@ my-acm-journey/
 │   │   ├── ProfilePanel.js    # Profile 面板数据 + 动态 DOM 渲染
 │   │   ├── ProjectPage.js     # Project 3D Intro 动态构建
 │   │   └── MemoryModal.js     # 剧情图文弹窗（Promise 异步与重试状态）
-│   ├── utils/AssetHelper.js   # 资源收集 / 排队 / NPC 命名空间 / DOM 图重试缓存
+│   ├── utils/
+│   │   ├── AssetHelper.js     # 资源收集 / 排队 / NPC 命名空间 / DOM 图重试缓存
+│   │   └── CityAtmosphere.js  # 桂林轻雨薄雾 / 重庆夕阳微尘与人物受光
 │   ├── libs/phaser.min.js
 │   ├── Audio/                 # MC.mp3 / wuxian_jinbu.mp3
 │   └── Photo/                 # Background / Qiu / Other_character / Projects / Awards / *_memo
@@ -78,6 +80,7 @@ my-acm-journey/
 - **资源路径**：所有 `js/Photo/...`、`js/Audio/...` 路径被 `story.js`、`BootScene`、`ProjectPage` 多处直接引用，**不要随意重命名或移动**。
 - **资源加载**：新资源必须经 `AssetHelper` 收集排队；背景与前景创建前调用 `textures.exists()` 安全检查；NPC 资源用 `getNpcAssetKey` / `getNpcAnimKey` 命名空间。前景在 `story.js` 对应关卡的 `foregroundImage` 中配置，缺图时跳过前景层并继续使用背景和可玩场景。
 - **场景前景**：前景 PNG 应与背景使用相同画布尺寸和坐标系，只提取需要遮挡玩家的近景像素并保留透明区域。运行时复用背景的位置、缩放与 `BG_SCROLL`，绘制深度为 1（玩家为 0、HUD 为 20），不添加物理碰撞；双层地面阴影深度为 -1，通过场景唯一的 `postupdate` 监听更新，并在 `shutdown` 解除监听。
+- **城市氛围**：`CityAtmosphere.js` 目前仅为桂林添加轻雨、远山薄雾和人物冷色受光，为重庆添加夕阳柔光、稀疏微尘和人物暖色受光。纹理由程序生成并复用缓存；效果保持低强度，受光不改变物理。背景缺失时跳过氛围；场景退出时清理对象、监听和人物染色。
 - **当前方案边界**：四站前景使用与原图配准的透明图层和背景相同的滚动系数；没有独立前景视差，也没有重建原图道路或地面的透视关系。调整前景范围时保留原底图与游戏物理。
 - **主菜单布局**：字号、间距、按钮尺寸均冻结，允许改色/发光/字体。
 - **主题切换**：支持日夜两种模式，三套 Token 变量域 (`--th-*` 主菜单/通用、`--da-*` Profile、`--pj-*` Project 3D)，`localStorage('acm-theme')` 持久化。
