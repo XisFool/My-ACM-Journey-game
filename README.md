@@ -17,10 +17,22 @@ python -m http.server 8080
 # 方式二：npm（快捷别名，系统需具备 Python 3）
 npm run dev
 
+# 方式三：npm 标准启动别名
+npm start
+
 # 浏览器打开 http://localhost:8080
 ```
 
-依赖 Python 3 与现代浏览器即可（npm 脚本为快捷别名）。游戏画布固定 960×540，自适应缩放 (`Phaser.Scale.ENVELOP`)。
+依赖 Python 3 与现代浏览器即可（`npm run dev` 与 `npm start` 均为快捷别名）。游戏画布固定 960×540，自适应缩放 (`Phaser.Scale.ENVELOP`)。
+
+## 操作
+
+- 左右移动：方向键 `←` / `→` 或 `A` / `D`
+- 跳跃：方向键 `↑`、`W` 或 `Space`
+- 触发剧情：跳起从下方顶击问号方块
+- 剧情弹窗：点击图片或导航翻页，点击 `CLICK TO CLOSE` 关闭
+
+当前关卡收集全部问号方块并关闭最后一个剧情弹窗后，游戏会自动进入下一关。
 
 ## 技术栈
 
@@ -34,6 +46,7 @@ npm run dev
 my-acm-journey/
 ├── index.html                 # DOM 骨架 + script 入口（不含业务 JS）
 ├── package.json               # 项目元信息与快捷启动脚本（npm run dev）
+├── LICENSE                    # MIT 开源许可证
 ├── fonts/                     # 本地核心艺术字体（WOFF2）
 │   ├── orbitron-variable.woff2
 │   ├── outfit-latin.woff2
@@ -93,6 +106,6 @@ my-acm-journey/
 
 ## 开源协议与版权声明 (License)
 
-- **源代码**: 遵循 [MIT License](package.json) 开源许可，欢迎学习与架构参考。
+- **源代码**: 遵循 [MIT License](LICENSE) 开源许可，欢迎学习与架构参考。
 - **个人素材与传记内容**: 项目中包含作者本人的肖像、真实竞赛历程回忆图文（`js/Photo/*_memo/`、`js/Photo/Awards/` 及头像）与个人文字记录，版权归原作者独立所有，**严禁未经授权用于任何商业用途或二次打包发布**。
 - **第三方同人/素材声明**: 游戏中引用的特定同人角色与背景音频（如星之卡比素材、Minecraft 背景音效等）版权归原版权方所有，仅作为非盈利个人传记游戏的氛围呈现，遵循合理使用原则。

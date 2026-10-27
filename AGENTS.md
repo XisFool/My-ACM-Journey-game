@@ -61,9 +61,9 @@ BootScene (纹理/动画生成) ──→ MenuScene (DOM主菜单) ──→ Loa
 - 跨关同曲不重启；切关换曲 stop 旧播新；回菜单或通关 screen 点击时 stopAll + 清空 registry；缺失时静默降级。
 
 ### 2.5 字体系统与渲染门禁
-- **字体资产与本地化**: 核心艺术字体（HUD 像素字 `'Press Start 2P'`、科技主标题 `'Orbitron'`、通用无衬线 `'Outfit'`）已全部本地化为 WOFF2 存于 `fonts/` 目录，由 `styles/fonts.css` 声明，首要保证主界面与游戏内零延迟；中文使用 `'Noto Sans SC'`（国内镜像按需加载）；剧情弹窗与通关页统一采用复古等宽字体 `'Courier New', Courier, monospace`。
+- **字体资产与本地化**: 核心艺术字体（HUD 像素字 `'Press Start 2P'`、科技主标题 `'Orbitron'`、通用无衬线 `'Outfit'`）已全部本地化为 WOFF2 存于 `fonts/` 目录，由 `styles/fonts.css` 声明；其中 Orbitron 与 Press Start 2P 由 `index.html` 预加载，Outfit 在 Project 页面使用时按 CSS 字体声明加载。中文使用 `'Noto Sans SC'`（国内镜像按需加载）；剧情弹窗与通关页统一采用复古等宽字体 `'Courier New', Courier, monospace`。
 - **两级字体门禁**:
-  1. **DOM 级门禁 (`index.html`)**: `<link rel="preload">` 预加载核心字体，配合 Promise + 300ms 快速超时（切换 `fonts-loading` / `fonts-ready` class 并隐形预度量），防止主界面 FOUT 文本闪烁。
+  1. **DOM 级门禁 (`index.html`)**: `<link rel="preload">` 预加载 Orbitron 与 Press Start 2P，配合 Promise + 300ms 快速超时（切换 `fonts-loading` / `fonts-ready` class 并隐形预度量），防止主界面 FOUT 文本闪烁。
   2. **Canvas 级门禁 (`main.js`)**: 启动 Phaser 前通过 `document.fonts.load('14px "Press Start 2P"')` 预热像素字体，配合 `Promise.race` + 3.5s 超时兜底与 `.catch(launch)` 容灾。
 - **两步切换重绘**: Phaser `TextStyle.setFontFamily(t)` 传相同值为空操作。弱网下字体延迟就绪后触发重绘，必须先设为临时族（如 `'monospace'`）再设回 `'"Press Start 2P"'` 才能强制重新度量文本宽度（涵盖 4 个 HUD 文本 + NPC 提示）。
 
