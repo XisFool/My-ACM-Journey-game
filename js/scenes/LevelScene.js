@@ -259,17 +259,6 @@ export default class LevelScene extends Phaser.Scene {
         this.physics.add.collider(this.player, this.groundGroup);
         this.physics.add.collider(this.player, this.blocks, this.hitBlock, this.canHitBlock, this);
 
-        // 加上防止掉出地图的保护（尽管collideWorldBounds=false）
-        this.events.on('update', () => {
-            // 1. 掉出地图兜底
-            if (this.player.y > CFG.H + 200) {
-                this.player.setPosition(100, CFG.H - CFG.GROUND_H - 41);
-                this.player.setVelocity(0, 0);
-                this.player.setAcceleration(0, 0);
-                this.cameras.main.scrollX = 0;
-            }
-        });
-
         // 7. 相机
         this.cameras.main.setBounds(0, 0, CFG.WORLD_W, CFG.H);
         this.physics.world.setBounds(0, 0, CFG.WORLD_W, CFG.H);
@@ -565,6 +554,14 @@ export default class LevelScene extends Phaser.Scene {
 
     // ── update() ─────────────────────────────────
     update(time, delta) {
+        // 掉出地图时回到起点。
+        if (this.player.y > CFG.H + 200) {
+            this.player.setPosition(100, CFG.H - CFG.GROUND_H - 41);
+            this.player.setVelocity(0, 0);
+            this.player.setAcceleration(0, 0);
+            this.cameras.main.scrollX = 0;
+        }
+
         // 未顶完所有方块，且玩家移动越过右端边界时，直接平滑重置回左端起点（无下坠/无掉帧卡顿）
         if (this.collected < this.totalBlocks && this.player.x >= CFG.WORLD_W) {
             this.cameras.main.stopFollow();
