@@ -112,6 +112,7 @@ export default class LevelScene extends Phaser.Scene {
 
         // 3. 玩家（使用精灵图表动画）
         this.player = this.physics.add.sprite(100, CFG.H - CFG.GROUND_H - 41, 'player_r');
+        this.player.setDepth(0);
         this.player.setScale(0.21, 0.20);
         this.player.setCollideWorldBounds(false);
         this.player.setGravityY(CFG.GRAVITY);
@@ -213,12 +214,12 @@ export default class LevelScene extends Phaser.Scene {
                 }
                 sprite = this.add.sprite(npcX, npcY, npcAssetKey)
                     .setOrigin(0.5, 1)
-                    .setDepth(5);
+                    .setDepth(0.5); // NPC 深度 0.5：高于主角 (0)，低于扣出的前景树木遮挡层 (1)
                 sprite.play(animKey);
             } else {
                 sprite = this.add.image(npcX, npcY, npcAssetKey)
                     .setOrigin(0.5, 1)
-                    .setDepth(5);
+                    .setDepth(0.5); // NPC 深度 0.5：高于主角 (0)，低于扣出的前景树木遮挡层 (1)
             }
             // 自动缩放：让 NPC 高度约 30px
             const targetH = 31.5;
